@@ -1,103 +1,97 @@
 package main.model;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private int id;
 
-    @Column(columnDefinition = "TINYINT")
+    @Column(columnDefinition = "TINYINT",
+            name = "is_moderator",
+            nullable = false)
     @Type(type = "org.hibernate.type.NumericBooleanType")
-    @NotNull
     private boolean isModerator;
 
-    @Basic
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
+    @Column(name = "reg_time", nullable = false)
     private Date regTime;
 
-    @NotNull
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @NotNull
+    @Column(name = "email", nullable = false)
     private String email;
 
-    @NotNull
+    @Column(name = "password", nullable = false)
     private String password;
 
+    @Column(name = "code")
     private String code;
 
-    @Column(columnDefinition="TEXT")
+    @Column(columnDefinition="TEXT", name = "photo")
     private String photo;
 
-    public int getId() {
-        return id;
+    // у пользователя может быть много постов
+
+    @OneToMany(mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<Post> postList = new ArrayList<>();
+
+    public void addPost(Post post) {
+        postList.add(post);
+        post.setUser(this);
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void removePost(Post post) {
+        postList.remove(post);
+        post.setUser(null);
     }
 
-    public boolean isModerator() {
-        return isModerator;
+    // пользователь может поставить много лайков и дизлайков
+
+    @OneToMany(mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<PostVote> postVoteList = new ArrayList<>();
+
+    public void addPostVote(PostVote postVote) {
+        postVoteList.add(postVote);
+        postVote.setUser(this);
     }
 
-    public void setModerator(boolean moderator) {
-        isModerator = moderator;
+    public void removePostVote(PostVote postVote) {
+        postVoteList.remove(postVote);
+        postVote.setUser(null);
     }
 
-    public Date getRegTime() {
-        return regTime;
+    // пользователь может сделать много комментариев
+
+    @OneToMany(mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<PostComment> postCommentList = new ArrayList<>();
+
+    public void addPostComment(PostComment postComment) {
+        postCommentList.add(postComment);
+        postComment.setUser(this);
     }
 
-    public void setRegTime(Date regTime) {
-        this.regTime = regTime;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getPhoto() {
-        return photo;
-    }
-
-    public void setPhoto(String photo) {
-        this.photo = photo;
+    public void removePostComment(PostComment postComment) {
+        postCommentList.remove(postComment);
+        postComment.setUser(null);
     }
 }

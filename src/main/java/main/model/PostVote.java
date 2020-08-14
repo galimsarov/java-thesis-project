@@ -1,69 +1,40 @@
 package main.model;
 
-import org.hibernate.annotations.Type;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @Entity
 @Table(name = "post_votes")
+@Getter
+@Setter
+@EqualsAndHashCode
 public class PostVote {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private int id;
 
-    private int userId;
-
-    private int postId;
-
-    @Basic
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
+    @Column(name = "time",
+            nullable = false)
     private Date time;
 
-    @Column(columnDefinition = "TINYINT")
-    @Type(type = "org.hibernate.type.NumericBooleanType")
-    @NotNull
-    private boolean value;
+    @Column(columnDefinition = "TINYINT",
+            name = "value",
+            nullable = false)
+    private int value;
 
-    public int getId() {
-        return id;
-    }
+    // у каждого лайка и дизлайка только 1 автор
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
 
-    public int getUserId() {
-        return userId;
-    }
+    // лайк или дизлайк может быть только к 1 посту
 
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-
-    public int getPostId() {
-        return postId;
-    }
-
-    public void setPostId(int postId) {
-        this.postId = postId;
-    }
-
-    public Date getTime() {
-        return time;
-    }
-
-    public void setTime(Date time) {
-        this.time = time;
-    }
-
-    public boolean isValue() {
-        return value;
-    }
-
-    public void setValue(boolean value) {
-        this.value = value;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Post post;
 }

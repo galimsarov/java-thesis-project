@@ -1,116 +1,108 @@
 package main.model;
 
+import lombok.Data;
+import main.model.enums.PostStatus;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
-import java.util.Date;
+import java.util.*;
 
 @Entity
 @Table(name = "posts")
+@Data
 public class Post {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private int id;
 
-    @Column(columnDefinition = "TINYINT")
+    @Column(columnDefinition = "TINYINT",
+            name = "is_active",
+            nullable = false)
     @Type(type = "org.hibernate.type.NumericBooleanType")
-    @NotNull
     private boolean isActive;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "enum('NEW','ACCEPTED','DECLINED') default 'NEW'")
-    @NotNull
-    private Status moderationStatus;
+    @Column(columnDefinition = "enum('NEW','ACCEPTED','DECLINED') default 'NEW'",
+            name = "moderation_status",
+            nullable = false)
+    private PostStatus moderationStatus;
 
-    @Column(nullable = true)
+    @Column(name = "moderator_id")
     private int moderatorId;
 
-    private int userId;
-
-    @Basic
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
+    @Column(name = "time",
+            nullable = false)
     private Date time;
 
-    @NotNull
+    @Column(name = "title",
+            nullable = false)
     private String title;
 
-    @Column(columnDefinition="TEXT")
-    @NotNull
+    @Column(columnDefinition="TEXT",
+            name = "text",
+            nullable = false)
     private String text;
 
+    @Column(name = "view_count",
+            nullable = false)
     private int viewCount;
 
-    public int getId() {
-        return id;
+    // у каждого поста только один автор
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
+
+    // у поста может быть много лайков и дизлайков
+
+    @OneToMany(mappedBy = "post",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<PostVote> postVoteList = new ArrayList<>();
+
+    public void addPostVote(PostVote postVote) {
+        postVoteList.add(postVote);
+        postVote.setPost(this);
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void removePostVote(PostVote postVote) {
+        postVoteList.remove(postVote);
+        postVote.setPost(null);
     }
 
-    public boolean isActive() {
-        return isActive;
+    // у поста может быть много комментариев
+
+    @OneToMany(mappedBy = "post",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<PostComment> postCommentList = new ArrayList<>();
+
+    public void addPostComment(PostComment postComment) {
+        postCommentList.add(postComment);
+        postComment.setPost(this);
     }
 
-    public void setActive(boolean active) {
-        isActive = active;
+    public void removePostComment(PostComment postComment) {
+        postCommentList.remove(postComment);
+        postComment.setPost(null);
     }
 
-    public Status getModerationStatus() {
-        return moderationStatus;
+    // у поста может быть много тэгов
+
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(name = "tag2post",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    private Set<Tag> tagSet = new HashSet<>();
+
+    public void addTag(Tag tag) {
+        tagSet.add(tag);
+        tag.getPostSet().add(this);
     }
 
-    public void setModerationStatus(Status moderationStatus) {
-        this.moderationStatus = moderationStatus;
-    }
-
-    public int getModeratorId() {
-        return moderatorId;
-    }
-
-    public void setModeratorId(int moderatorId) {
-        this.moderatorId = moderatorId;
-    }
-
-    public int getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-
-    public Date getTime() {
-        return time;
-    }
-
-    public void setTime(Date time) {
-        this.time = time;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public int getViewCount() {
-        return viewCount;
-    }
-
-    public void setViewCount(int viewCount) {
-        this.viewCount = viewCount;
+    public void removeTag(Tag tag) {
+        tagSet.remove(tag);
+        tag.getPostSet().remove(this);
     }
 }

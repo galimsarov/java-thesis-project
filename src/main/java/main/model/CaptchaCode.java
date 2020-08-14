@@ -1,58 +1,32 @@
 package main.model;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @Entity
 @Table(name = "captcha_codes")
+@Getter
+@Setter
 public class CaptchaCode {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private int id;
 
-    @Basic
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
+    @Column(name = "time", nullable = false)
     private Date time;
 
-    @Column(columnDefinition = "TINYTEXT")
-    @NotNull
+    @Column(columnDefinition = "TINYTEXT",
+            name = "code",
+            nullable = false)
     private String code;
 
-    @Column(columnDefinition = "TINYTEXT")
-    @NotNull
+    @Column(columnDefinition = "TINYTEXT",
+            name = "secret_code",
+            nullable = false)
     private String secretCode;
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public Date getTime() {
-        return time;
-    }
-
-    public void setTime(Date time) {
-        this.time = time;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getSecretCode() {
-        return secretCode;
-    }
-
-    public void setSecretCode(String secretCode) {
-        this.secretCode = secretCode;
-    }
 }

@@ -1,77 +1,43 @@
 package main.model;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 import java.util.Date;
 
 @Entity
 @Table(name = "post_comments")
+@Getter
+@Setter
+@EqualsAndHashCode
 public class PostComment {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private int id;
 
-    @Column(nullable = true)
-    private int parentId;
+    @Column(name = "parent_id")
+    private Integer parentId;
 
-    private int postId;
-
-    private int userId;
-
-    @Basic
     @Temporal(TemporalType.TIMESTAMP)
-    @NotNull
+    @Column(name = "time",
+            nullable = false)
     private Date time;
 
-    @Column(columnDefinition="TEXT")
-    @NotNull
+    @Column(columnDefinition="TEXT",
+            name = "text",
+            nullable = false)
     private String text;
 
-    public int getId() {
-        return id;
-    }
+    // комментарий можно оставить одновременно только к 1 посту
 
-    public void setId(int id) {
-        this.id = id;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Post post;
 
-    public int getParentId() {
-        return parentId;
-    }
+    // у комментария может быть только 1 автор
 
-    public void setParentId(int parentId) {
-        this.parentId = parentId;
-    }
-
-    public int getPostId() {
-        return postId;
-    }
-
-    public void setPostId(int postId) {
-        this.postId = postId;
-    }
-
-    public int getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-
-    public Date getTime() {
-        return time;
-    }
-
-    public void setTime(Date time) {
-        this.time = time;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
 }
