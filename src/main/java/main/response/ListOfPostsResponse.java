@@ -7,7 +7,7 @@ import java.util.List;
 
 @Getter
 @Setter
-public class ListOfPostsDTO {
+public class ListOfPostsResponse {
     private int count;
-    private List<PostDTO> posts;
+    private List<PostResponse> posts;
 }

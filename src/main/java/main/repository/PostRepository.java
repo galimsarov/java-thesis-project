@@ -10,9 +10,15 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+/**
+ * Interface PostRepository. Data layer for Post entity
+ *
+ * @version 1.0
+ * @see org.springframework.data.jpa.repository.JpaRepository
+ */
+
 @Repository
-public interface PostRepository extends
-        JpaRepository<Post, Integer> {
+public interface PostRepository extends JpaRepository<Post, Integer> {
     @Query(value = "SELECT posts.id, " +
             "posts.is_active, posts.moderation_status, posts.moderator_id, " +
             "posts.text, posts.time, posts.title, posts.view_count, " +
@@ -55,8 +61,8 @@ public interface PostRepository extends
             "current_time() and (posts.text like concat('%',:query,'%') " +
             "or posts.title like concat('%',:query,'%'))",
             nativeQuery = true)
-    List<Post> searchForPostsByQuery(@Param("query") String query,
-                                     Pageable pageable);
+    List<Post> searchForPostsByQuery
+            (@Param("query") String query, Pageable pageable);
 
     @Query(value = "select * from posts where is_active = 1 and " +
             "moderation_status = 'ACCEPTED' and time > :dateBefore " +
@@ -74,4 +80,64 @@ public interface PostRepository extends
             "current_time() and temp.tag_name = :query",
             nativeQuery = true)
     List<Post> getPostsByTag(@Param("query") String tag, Pageable pageable);
+
+    @Query(value = "select * from posts join (select id, name from users " +
+            "where name = :query) as admins on posts.moderator_id = " +
+            "admins.id where posts.is_active = 1 and " +
+            "posts.moderation_status = 'NEW'",
+            nativeQuery = true)
+    List<Post> getNewPosts
+            (@Param("query") String name, Pageable pageable);
+
+    @Query(value = "select * from posts join (select id, name from users " +
+            "where name = :query) as admins on posts.moderator_id = " +
+            "admins.id where posts.is_active = 1 and " +
+            "posts.moderation_status = 'DECLINED'",
+            nativeQuery = true)
+    List<Post> getDeclinedPosts
+            (@Param("query") String name, Pageable pageable);
+
+    @Query(value = "select * from posts join (select id, name from users " +
+            "where name = :query) as admins on posts.moderator_id = " +
+            "admins.id where posts.is_active = 1 and " +
+            "posts.moderation_status = 'ACCEPTED'",
+            nativeQuery = true)
+    List<Post> getAcceptedPosts
+            (@Param("query") String name, Pageable pageable);
+
+    @Query(value = "select * from posts join (select id, name from users " +
+            "where name = :query) as temp_users on posts.user_id = " +
+            "temp_users.id where posts.is_active = 0",
+            nativeQuery = true)
+    List<Post> getMyInactivePosts
+            (@Param("query") String name, Pageable pageable);
+
+    @Query(value = "select * from posts join (select id, name from users " +
+            "where name = :query) as temp_users on posts.user_id = " +
+            "temp_users.id where posts.is_active = 1 and " +
+            "posts.moderation_status = 'NEW'",
+            nativeQuery = true)
+    List<Post> getMyPendingPosts
+            (@Param("query") String name, Pageable pageable);
+
+    @Query(value = "select * from posts join (select id, name from users " +
+            "where name = :query) as temp_users on posts.user_id = " +
+            "temp_users.id where posts.is_active = 1 and " +
+            "posts.moderation_status = 'DECLINED'",
+            nativeQuery = true)
+    List<Post> getMyDeclinedPosts
+            (@Param("query") String name, Pageable pageable);
+
+    @Query(value = "select * from posts join (select id, name from users " +
+            "where name = :query) as temp_users on posts.user_id = " +
+            "temp_users.id where posts.is_active = 1 and " +
+            "posts.moderation_status = 'ACCEPTED'",
+            nativeQuery = true)
+    List<Post> getMyPublishedPosts
+            (@Param("query") String name, Pageable pageable);
+
+    @Query(value = "select * from posts where id = :query and " +
+            "is_active = 1 and moderation_status = 'ACCEPTED' and " +
+            "time <= current_time()", nativeQuery = true)
+    Post getPost(@Param("query") int id);
 }

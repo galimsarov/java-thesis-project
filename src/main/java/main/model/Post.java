@@ -1,7 +1,7 @@
 package main.model;
 
-import lombok.Data;
-import main.model.enums.PostStatus;
+import lombok.*;
+import main.model.helper.PostStatus;
 import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
@@ -9,7 +9,8 @@ import java.util.*;
 
 @Entity
 @Table(name = "posts")
-@Data
+@Getter
+@Setter
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -90,7 +91,8 @@ public class Post {
 
     // у поста может быть много тэгов
 
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.DETACH,
+            CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     @JoinTable(name = "tag2post",
             joinColumns = @JoinColumn(name = "post_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id"))

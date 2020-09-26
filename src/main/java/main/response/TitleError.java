@@ -5,7 +5,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class UserDTOBasic {
-    private int id;
-    private String name;
+public class TitleError extends AbstractError {
+    private String title;
 }

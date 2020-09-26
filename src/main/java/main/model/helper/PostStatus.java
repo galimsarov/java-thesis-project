@@ -1,4 +1,4 @@
-package main.model.enums;
+package main.model.helper;
 
 public enum PostStatus {
     NEW, ACCEPTED, DECLINED;
