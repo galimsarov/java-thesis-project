@@ -11,6 +11,7 @@ import java.util.*;
 @Table(name = "posts")
 @Getter
 @Setter
+@NoArgsConstructor
 public class Post {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -91,11 +92,15 @@ public class Post {
 
     // у поста может быть много тэгов
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.DETACH,
-            CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+//    @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.DETACH,
+//            CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+//    @JoinTable(name = "tag2post",
+//            joinColumns = @JoinColumn(name = "post_id"),
+//            inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    @ManyToMany(cascade = {CascadeType.ALL})
     @JoinTable(name = "tag2post",
-            joinColumns = @JoinColumn(name = "post_id"),
-            inverseJoinColumns = @JoinColumn(name = "tag_id"))
+        joinColumns = {@JoinColumn(name = "post_id")},
+        inverseJoinColumns = {@JoinColumn(name = "tag_id")})
     private Set<Tag> tagSet = new HashSet<>();
 
     public void addTag(Tag tag) {

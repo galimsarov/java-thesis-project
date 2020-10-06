@@ -20,9 +20,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Класс PostServiceImpl
@@ -329,18 +327,19 @@ public class PostServiceImpl implements PostService {
         post.setViewCount(0);
         post.setUser(user);
 
-        List<String> currentTags = tagRepository.findNamesOfTags();
-        List<Tag> newTags = new ArrayList<>();
+        List<String> namesOfCurrentTags = tagRepository.findNamesOfTags();
+        Set<Tag> newTags = new HashSet<>();
         for (String nameOfTagFromRequest : postRequest.getTags()) {
             Tag newTag = new Tag();
-            newTag.setName(nameOfTagFromRequest);
-            if (!currentTags.contains(nameOfTagFromRequest))
-                newTags.add(newTag);
-            post.addTag(newTag);
+            if (namesOfCurrentTags.contains(nameOfTagFromRequest))
+                newTag = tagRepository.findTagByName(nameOfTagFromRequest);
+            else
+                newTag.setName(nameOfTagFromRequest);
+            newTags.add(newTag);
         }
+        post.setTagSet(newTags);
 
-//        tagRepository.saveAll(newTags);
-        postRepository.save(post);
+        postRepository.saveAndFlush(post);
 
         SuccessfullyAddedPost addedPost = new SuccessfullyAddedPost();
         addedPost.setResult(true);
