@@ -9,6 +9,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Класс UserServiceImpl
+ * Сервисный слой для работы с пользователями
+ *
+ * @version 1.0
+ */
+
 public class UserServiceImpl implements UserService {
     @Autowired
     private final UserRepository userRepository;
@@ -18,6 +25,12 @@ public class UserServiceImpl implements UserService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Метод getAccounts
+     * Метод возвращает список пользователей из БД
+     *
+     * @see Account
+     */
     @Override
     public List<Account> getAccounts() {
         List<User> admins = userRepository.findAll();

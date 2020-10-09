@@ -1,38 +1,45 @@
 package main.controller;
 
 import main.response.Blog;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import main.service.GeneralService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+
+/**
+ * Класс ApiGeneralController
+ * REST-контроллер для прочих запросов к API
+ *
+ * @version 1.0
+ */
 @RestController
 @RequestMapping("/api")
 public class ApiGeneralController {
-    @Value("${title}")
-    private String title;
+    @Autowired
+    GeneralService generalService;
 
-    @Value("${subtitle}")
-    private String subtitle;
-
-    @Value("${phone}")
-    private String phone;
-
-    @Value("${email}")
-    private String email;
-
-    @Value("${copyright}")
-    private String copyright;
-
-    @Value("${copyrightFrom}")
-    private String copyrightFrom;
-
-    private Blog getBlogInfo() {
-        return new Blog(title, subtitle, phone, email, copyright, copyrightFrom);
-    }
-
+    /**
+     * Метод getCommonData
+     * Метод возвращает общую информацию о блоге
+     *
+     * @see Blog
+     */
     @GetMapping("/init")
     public Blog getCommonData() {
-        return getBlogInfo();
+        return generalService.getBlogInfo();
+    }
+
+    /**
+     * Метод imageUpload
+     * Метод загружает на сервер изображение в папку upload
+     * POST запрос /api/image
+     */
+    @PostMapping(value = "/image", consumes = "multipart/form-data")
+    public Object imageUpload
+            (@RequestPart(value = "image") MultipartFile file)
+            throws IOException {
+        return generalService.imageUpload(file);
     }
 }

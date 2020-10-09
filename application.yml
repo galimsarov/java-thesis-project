@@ -4,6 +4,9 @@ spring.datasource.password: Java2020
 spring.jpa.generate-ddl: false
 spring.jpa.show-sql: false
 spring.jpa.hibernate.ddl-auto: validate
+#max file and request size
+spring.servlet.multipart.max-file-size: 10MB
+spring.servlet.multipart.max-request-size: 10MB
 
 title: DevPub
 subtitle: Рассказы разработчиков

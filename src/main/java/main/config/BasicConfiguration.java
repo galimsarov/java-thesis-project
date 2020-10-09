@@ -18,13 +18,22 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
+/**
+ * Класс BasicConfiguration
+ * Конфигуратор авторизаций
+ *
+ * @version 1.0
+ */
 @Configuration
 @EnableWebSecurity
 public class BasicConfiguration extends WebSecurityConfigurerAdapter {
-
     @Autowired
     private UserRepository userRepository;
 
+    /**
+     * Метод configure(HttpSecurity http)
+     * Метод конфигурирует доступы: endpoints
+     */
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
@@ -40,6 +49,10 @@ public class BasicConfiguration extends WebSecurityConfigurerAdapter {
                 .httpBasic();
     }
 
+    /**
+     * Метод configure(AuthenticationManagerBuilder auth)
+     * Метод конфигурирует доступы: берёт информацию из БД
+     */
     @Override
     protected void configure(AuthenticationManagerBuilder auth)
             throws Exception {
