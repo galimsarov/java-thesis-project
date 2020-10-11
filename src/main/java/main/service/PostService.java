@@ -14,4 +14,5 @@ public interface PostService {
     ListOfPostsResponse getMyPosts(int offset, int limit, String status);
     SpecificPostResponse getPost(int id);
     AbstractResponse addPost(PostRequest postRequest);
+    AbstractResponse editPost(int id, PostRequest postRequest);
 }

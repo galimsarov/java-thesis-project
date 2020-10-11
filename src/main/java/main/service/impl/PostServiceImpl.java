@@ -280,34 +280,9 @@ public class PostServiceImpl implements PostService {
      */
     @Override
     public AbstractResponse addPost(PostRequest postRequest) {
-        String titleError = "", textError = "";
-        if (postRequest.getTitle().length() == 0)
-            titleError = "Заголовок не установлен";
-        else
-            if (postRequest.getTitle().length() < 3)
-                titleError = "Текст заголовка слишком короткий";
-        if (postRequest.getText().length() == 0)
-            textError = "Публикация не установлена";
-        else
-            if (postRequest.getText().length() < 50)
-                textError = "Текст публикации слишком короткий";
-        if ((textError.length() != 0) || (titleError.length() != 0)) {
-            List<AbstractError> errors = new ArrayList<>();
-            if (titleError.length() != 0) {
-                TitleError theTitleError = new TitleError();
-                theTitleError.setTitle(titleError);
-                errors.add(theTitleError);
-            }
-            if (textError.length() != 0) {
-                TextError theTextError = new TextError();
-                theTextError.setText(textError);
-                errors.add(theTextError);
-            }
-            ErrorAddingPost response = new ErrorAddingPost();
-            response.setResult(false);
-            response.setErrors(errors);
-            return response;
-        }
+        ErrorAddingPost errorResponse = checkPostData(postRequest);
+        if (!errorResponse.isResult())
+            return errorResponse;
 
         if (postRequest.getTimestamp() < (new Date()).getTime()) {
             long newTimeStamp = (new Date()).getTime();
@@ -319,25 +294,54 @@ public class PostServiceImpl implements PostService {
         User user = userRepository.findByName(auth.getName());
 
         Post post = new Post();
-        post.setActive(postRequest.getActive() == 1);
+        post = createNewPost(postRequest, user, post);
         post.setModerationStatus(PostStatus.NEW);
-        post.setTime(new Date(postRequest.getTimestamp()));
-        post.setTitle(postRequest.getTitle());
-        post.setText(postRequest.getText());
-        post.setViewCount(0);
-        post.setUser(user);
 
-        List<String> namesOfCurrentTags = tagRepository.findNamesOfTags();
-        Set<Tag> newTags = new HashSet<>();
-        for (String nameOfTagFromRequest : postRequest.getTags()) {
-            Tag newTag = new Tag();
-            if (namesOfCurrentTags.contains(nameOfTagFromRequest))
-                newTag = tagRepository.findTagByName(nameOfTagFromRequest);
-            else
-                newTag.setName(nameOfTagFromRequest);
-            newTags.add(newTag);
+        postRepository.saveAndFlush(post);
+
+        SuccessfullyAddedPost addedPost = new SuccessfullyAddedPost();
+        addedPost.setResult(true);
+        return addedPost;
+    }
+
+    /**
+     * Метод editPost
+     * Метод изменяет данные поста, которые пользователь ввёл в форму публикации
+     *
+     * @param id поста, который мы хотим изменить
+     * @see PostRequest
+     */
+    @Override
+    public AbstractResponse editPost(int id, PostRequest postRequest) {
+        ErrorAddingPost errorResponse = checkPostData(postRequest);
+        if (!errorResponse.isResult())
+            return errorResponse;
+
+        if (postRequest.getTimestamp() < (new Date()).getTime()) {
+            long newTimeStamp = (new Date()).getTime();
+            postRequest.setTimestamp(newTimeStamp);
         }
-        post.setTagSet(newTags);
+
+        Authentication auth = SecurityContextHolder.getContext().
+                getAuthentication();
+        User user = userRepository.findByName(auth.getName());
+
+        if ((user.getId() != id) &&
+                (userRepository.isAdmin(user.getName()) == 0)) {
+            ErrorAddingPost errorAuthResponse = new ErrorAddingPost();
+            errorAuthResponse.setResult(false);
+            TextError textError = new TextError();
+            textError.setText("Вы не являетесь модератором и это не ваш пост");
+            List<AbstractError> errors = new ArrayList<>();
+            errors.add(textError);
+            errorAuthResponse.setErrors(errors);
+            return errorAuthResponse;
+        }
+
+        Post post = postRepository.getOne(id);
+        post = createNewPost(postRequest, user, post);
+        if (user.getId() == id)
+            post.setModerationStatus(PostStatus.NEW);
 
         postRepository.saveAndFlush(post);
 
@@ -367,5 +371,59 @@ public class PostServiceImpl implements PostService {
         if (post.getUser().getName().equals(name))
             return post.getViewCount();
         return post.getViewCount() + 1;
+    }
+
+    private ErrorAddingPost checkPostData(PostRequest postRequest) {
+        ErrorAddingPost response = new ErrorAddingPost();
+        response.setResult(true);
+        String titleError = "", textError = "";
+        if (postRequest.getTitle().length() == 0)
+            titleError = "Заголовок не установлен";
+        else
+        if (postRequest.getTitle().length() < 3)
+            titleError = "Текст заголовка слишком короткий";
+        if (postRequest.getText().length() == 0)
+            textError = "Публикация не установлена";
+        else
+        if (postRequest.getText().length() < 50)
+            textError = "Текст публикации слишком короткий";
+        if ((textError.length() != 0) || (titleError.length() != 0)) {
+            List<AbstractError> errors = new ArrayList<>();
+            if (titleError.length() != 0) {
+                TitleError theTitleError = new TitleError();
+                theTitleError.setTitle(titleError);
+                errors.add(theTitleError);
+            }
+            if (textError.length() != 0) {
+                TextError theTextError = new TextError();
+                theTextError.setText(textError);
+                errors.add(theTextError);
+            }
+            response.setResult(false);
+            response.setErrors(errors);
+        }
+        return response;
+    }
+
+    private Post createNewPost(PostRequest postRequest, User user, Post post) {
+        post.setActive(postRequest.getActive() == 1);
+        post.setTime(new Date(postRequest.getTimestamp()));
+        post.setTitle(postRequest.getTitle());
+        post.setText(postRequest.getText());
+        post.setViewCount(0);
+        post.setUser(user);
+
+        List<String> namesOfCurrentTags = tagRepository.findNamesOfTags();
+        Set<Tag> newTags = new HashSet<>();
+        for (String nameOfTagFromRequest : postRequest.getTags()) {
+            Tag newTag = new Tag();
+            if (namesOfCurrentTags.contains(nameOfTagFromRequest))
+                newTag = tagRepository.findTagByName(nameOfTagFromRequest);
+            else
+                newTag.setName(nameOfTagFromRequest);
+            newTags.add(newTag);
+        }
+        post.setTagSet(newTags);
+        return post;
     }
 }

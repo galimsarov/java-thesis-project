@@ -139,7 +139,7 @@ public class ApiPostController {
      * Метод выводит данные конкретного поста для отображения на странице поста
      * GET запрос /api/post/{id}
      *
-     * @param id пост, который мы хотим ищем
+     * @param id поста, который мы хотим найти
      * @see SpecificPostResponse
      */
     @GetMapping("/{id}")
@@ -160,5 +160,19 @@ public class ApiPostController {
     @PostMapping
     public AbstractResponse addPost(@RequestBody PostRequest postRequest) {
         return postService.addPost(postRequest);
+    }
+
+    /**
+     * Метод editPost
+     * Метод изменяет данные поста, которые пользователь ввёл в форму публикации
+     * POST запрос /api/post
+     *
+     * @param id поста, который мы хотим изменить
+     * @see PostRequest
+     */
+    @PutMapping("/{id}")
+    public AbstractResponse editPost(@PathVariable(value = "id") int id,
+                                     @RequestBody PostRequest postRequest) {
+        return postService.editPost(id, postRequest);
     }
 }

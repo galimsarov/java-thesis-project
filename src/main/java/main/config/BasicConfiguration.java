@@ -44,6 +44,8 @@ public class BasicConfiguration extends WebSecurityConfigurerAdapter {
                 .authenticated()
                 .antMatchers(HttpMethod.POST)
                 .authenticated()
+                .antMatchers(HttpMethod.PUT)
+                .authenticated()
                 .anyRequest().permitAll()
                 .and()
                 .httpBasic();
