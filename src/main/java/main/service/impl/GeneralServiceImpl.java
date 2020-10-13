@@ -1,16 +1,25 @@
 package main.service.impl;
 
-import main.response.Blog;
-import main.response.ErrorAddingImage;
-import main.response.ImageError;
+import main.model.Post;
+import main.model.PostComment;
+import main.model.User;
+import main.repository.PostCommentRepository;
+import main.repository.PostRepository;
+import main.repository.UserRepository;
+import main.request.CommentRequest;
+import main.response.*;
 import main.service.GeneralService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Random;
 
 /**
@@ -26,6 +35,15 @@ public class GeneralServiceImpl implements GeneralService {
 
     @Autowired
     private HttpServletRequest request;
+
+    @Autowired
+    private PostRepository postRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PostCommentRepository commentRepository;
 
     /**
      * Метод getBlogInfo
@@ -94,6 +112,59 @@ public class GeneralServiceImpl implements GeneralService {
             file.transferTo(dest);
 
             response = uploadsDir + file.getOriginalFilename();
+        }
+        return response;
+    }
+
+    /**
+     * Метод sendComment
+     * Метод добавляет комментарий к посту
+     *
+     * @see main.request.CommentRequest
+     */
+    @Override
+    public AbstractResponse sendComment(CommentRequest commentRequest) {
+        if (commentRequest.getText().length() < 3) {
+            TextError textError = new TextError();
+            if (commentRequest.getText().length() == 0)
+                textError.setText("Комментарий не установлен");
+            else
+                textError.setText("Текст комментария слишком короткий");
+            ErrorAddingComment errorResponse = new ErrorAddingComment();
+            errorResponse.setResult(false);
+            errorResponse.setErrors(textError);
+            return errorResponse;
+        }
+        IdResponse response = null;
+        try {
+            Post post = postRepository.getOne(commentRequest.getPost_id());
+            PostComment comment = new PostComment();
+
+            PostComment parentComment = commentRepository
+                    .getOne(commentRequest.getParent_id());
+            if (parentComment.getId() != 0) {
+                String tempText = parentComment.getText();
+            }
+
+            Authentication auth = SecurityContextHolder.getContext().
+                    getAuthentication();
+            User user = userRepository.findByName(auth.getName());
+
+            comment.setParentId(commentRequest.getParent_id());
+            comment.setPost(post);
+            comment.setText(commentRequest.getText());
+            comment.setTime(new Date());
+            comment.setUser(user);
+
+            post.addPostComment(comment);
+
+            postRepository.saveAndFlush(post);
+
+            response = new IdResponse();
+            response.setId(commentRepository.findIdByText(comment.getText()));
+        }
+        catch (EntityNotFoundException e) {
+            return response;
         }
         return response;
     }
