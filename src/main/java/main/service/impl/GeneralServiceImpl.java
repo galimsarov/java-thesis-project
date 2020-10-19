@@ -4,10 +4,12 @@ import lombok.RequiredArgsConstructor;
 import main.model.Post;
 import main.model.PostComment;
 import main.model.User;
+import main.model.helper.PostStatus;
 import main.repository.PostCommentRepository;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
 import main.request.CommentRequest;
+import main.request.PostModerationRequest;
 import main.response.*;
 import main.service.GeneralService;
 import org.springframework.security.core.Authentication;
@@ -217,6 +219,45 @@ public class GeneralServiceImpl implements GeneralService {
                     (tagWithWeight.getWeight()/maxWeight);
         }
         response.setTags(list);
+        return response;
+    }
+
+    /**
+     * Метод postModeration
+     * Метод фиксирует действие модератора по посту: его утверждение или
+     * отклонение
+     *
+     * @see main.request.PostModerationRequest
+     */
+    @Override
+    public AbstractResponse postModeration(PostModerationRequest request) {
+        SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+        response.setResult(false);
+
+        Authentication auth = SecurityContextHolder.getContext().
+                getAuthentication();
+        User user = userRepository.findByName(auth.getName());
+
+        if (user.isModerator()) {
+            int postId = request.getPost_id();
+            Post post = postRepository.getOne(postId);
+
+            String decision = request.getDecision();
+            if (decision.equals("accept"))
+                post.setModerationStatus(PostStatus.ACCEPTED);
+            else if (decision.equals("decline"))
+                post.setModerationStatus(PostStatus.DECLINED);
+            else
+                return response;
+
+            int moderatorId = user.getId();
+            post.setModeratorId(moderatorId);
+
+            postRepository.saveAndFlush(post);
+
+            response.setResult(true);
+            return response;
+        }
         return response;
     }
 }

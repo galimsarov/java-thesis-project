@@ -1,6 +1,7 @@
 package main.controller;
 
 import main.request.CommentRequest;
+import main.request.PostModerationRequest;
 import main.response.AbstractResponse;
 import main.response.Blog;
 import main.service.GeneralService;
@@ -73,7 +74,21 @@ public class ApiGeneralController {
      * @see main.response.TagWithWeight
      */
     @GetMapping("/tag")
-    public AbstractResponse getListOfTags(@RequestParam String query) {
+    public AbstractResponse getListOfTags
+    (@RequestParam String query) {
         return generalService.getListOfTags(query);
+    }
+
+    /**
+     * Метод postModeration
+     * Метод фиксирует действие модератора по посту: его утверждение или отклонение
+     * POST запрос /api/moderation
+     *
+     * @see main.request.PostModerationRequest
+     */
+    @PostMapping("/moderation")
+    public AbstractResponse postModeration
+    (@RequestBody PostModerationRequest request) {
+        return generalService.postModeration(request);
     }
 }
