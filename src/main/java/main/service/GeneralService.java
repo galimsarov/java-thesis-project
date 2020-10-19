@@ -11,4 +11,5 @@ public interface GeneralService {
     Blog getBlogInfo();
     Object imageUpload(MultipartFile multipartFile) throws IOException;
     AbstractResponse sendComment(CommentRequest commentRequest);
+    AbstractResponse getListOfTags(String query);
 }

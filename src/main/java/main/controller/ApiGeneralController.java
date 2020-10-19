@@ -57,8 +57,23 @@ public class ApiGeneralController {
      */
     @PostMapping("/comment")
     public Object sendComment(@RequestBody CommentRequest commentRequest) {
-        AbstractResponse response = generalService.sendComment(commentRequest);
+        AbstractResponse response = generalService
+                .sendComment(commentRequest);
         return Objects.requireNonNullElseGet
                 (response, () -> new ResponseEntity(HttpStatus.BAD_REQUEST));
+    }
+
+    /**
+     * Метод getListOfTags
+     * Метод выдаёт список тэгов, начинающихся на строку, заданную в
+     * параметре
+     * GET запрос /api/tag
+     *
+     * @param query часть тэга или тэг, м.б. не задан, м.б. пустым
+     * @see main.response.TagWithWeight
+     */
+    @GetMapping("/tag")
+    public AbstractResponse getListOfTags(@RequestParam String query) {
+        return generalService.getListOfTags(query);
     }
 }

@@ -1,5 +1,6 @@
 package main.service.impl;
 
+import lombok.RequiredArgsConstructor;
 import main.model.Post;
 import main.model.PostComment;
 import main.model.User;
@@ -9,17 +10,22 @@ import main.repository.UserRepository;
 import main.request.CommentRequest;
 import main.response.*;
 import main.service.GeneralService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
+import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -29,21 +35,16 @@ import java.util.Random;
  * @version 1.0
  */
 @Service
+@RequiredArgsConstructor
 public class GeneralServiceImpl implements GeneralService {
-    @Autowired
-    private Blog blog;
+    private final Blog blog;
+    private final HttpServletRequest request;
+    private final PostRepository postRepository;
+    private final UserRepository userRepository;
+    private final PostCommentRepository commentRepository;
 
-    @Autowired
-    private HttpServletRequest request;
-
-    @Autowired
-    private PostRepository postRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PostCommentRepository commentRepository;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /**
      * Метод getBlogInfo
@@ -166,6 +167,56 @@ public class GeneralServiceImpl implements GeneralService {
         catch (EntityNotFoundException e) {
             return response;
         }
+        return response;
+    }
+
+    /**
+     * Метод getListOfTags
+     * Метод выдаёт список тэгов, начинающихся на строку, заданную в параметре
+     *
+     * @param query часть тэга или тэг, м.б. не задан, м.б. пустым
+     * @see main.response.TagWithWeight
+     */
+    @Override
+    public AbstractResponse getListOfTags(String query) {
+        Query nativeQuery = entityManager.createNativeQuery
+                ("select name, count(name) from " +
+                        "(select tags.name, new_tag2posts.postid from tags " +
+                        "join (select tag2post.tag_id, new_posts.id " +
+                        "as postid from tag2post join (select * from posts " +
+                        "where is_active = 1 and moderation_status = " +
+                        "'ACCEPTED' and time < current_time()) as " +
+                        "new_posts where tag2post.post_id = new_posts.id) " +
+                        "as new_tag2posts on tags.id = new_tag2posts.tag_id) " +
+                        "as ready_tags where name like concat(?1,'%') " +
+                        "group by name");
+        nativeQuery.setParameter(1, query);
+        List<Object[]> tags = nativeQuery.getResultList();
+        int totalPosts = postRepository.getActivePosts();
+
+        List<TagWithWeight> list = new ArrayList<>();
+        ListOfTags response = new ListOfTags();
+
+        BigInteger currentBig = new BigInteger(tags.get(0)[1].toString());
+        int currentCount = currentBig.intValue();
+        float maxWeight = (float)(currentCount) / totalPosts;
+
+        for (Object[] objects : tags) {
+            TagWithWeight tag = new TagWithWeight();
+            currentBig = new BigInteger(objects[1].toString());
+            currentCount = currentBig.intValue();
+            float currentWeight = (float) (currentCount) / totalPosts;
+            if (currentWeight > maxWeight)
+                maxWeight = currentWeight;
+            tag.setName(objects[0].toString());
+            tag.setWeight(currentWeight);
+            list.add(tag);
+        }
+        for (TagWithWeight tagWithWeight : list) {
+            tagWithWeight.setWeight
+                    (tagWithWeight.getWeight()/maxWeight);
+        }
+        response.setTags(list);
         return response;
     }
 }
