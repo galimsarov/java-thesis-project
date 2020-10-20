@@ -14,4 +14,5 @@ public interface GeneralService {
     AbstractResponse sendComment(CommentRequest commentRequest);
     AbstractResponse getListOfTags(String query);
     AbstractResponse postModeration(PostModerationRequest request);
+    AbstractResponse numberOfPosts(Integer year);
 }

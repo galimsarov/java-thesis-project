@@ -25,10 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Класс GeneralServiceImpl
@@ -258,6 +255,57 @@ public class GeneralServiceImpl implements GeneralService {
             response.setResult(true);
             return response;
         }
+        return response;
+    }
+
+    /**
+     * Метод numberOfPosts
+     * Метод выводит количества публикаций на каждую дату переданного в
+     * параметре year года или текущего года
+     *
+     * @param year год в виде четырёхзначного числа, если не передан -
+     *             возвращать за текущий год
+     */
+    @Override
+    public AbstractResponse numberOfPosts(Integer year) {
+        Query nativeQuery = entityManager.createNativeQuery
+                ("select distinct substr(time, 1, 4) as year from posts " +
+                        "order by year asc");
+        List<Object> yearObjects = nativeQuery.getResultList();
+        List<Integer> years = new ArrayList<>();
+
+        for (Object current : yearObjects) {
+            BigInteger currentBig = new BigInteger(current.toString());
+            years.add(currentBig.intValue());
+        }
+
+        nativeQuery = entityManager.createNativeQuery
+                ("select days.day, count(days.day) from (select " +
+                        "substr(time, 1, 10) as day from posts where " +
+                        "substr(time, 1, 4) like ?1) as days " +
+                        "group by days.day");
+        String parameter;
+        if (year == null) {
+            int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+            parameter = String.valueOf(currentYear);
+        }
+        else
+            parameter = String.valueOf(year);
+        nativeQuery.setParameter(1, parameter);
+        List<Object[]> postObjects = nativeQuery.getResultList();
+        Map<String, Integer> posts = new HashMap<>();
+
+        for (Object[] current : postObjects) {
+            String key = current[0].toString();
+            BigInteger bigIntValue = new BigInteger(current[1].toString());
+            int value = bigIntValue.intValue();
+            posts.put(key, value);
+        }
+
+        CalendarResponse response = new CalendarResponse();
+        response.setYears(years);
+        response.setPosts(posts);
+
         return response;
     }
 }

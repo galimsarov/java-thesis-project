@@ -91,4 +91,19 @@ public class ApiGeneralController {
     (@RequestBody PostModerationRequest request) {
         return generalService.postModeration(request);
     }
+
+    /**
+     * Метод numberOfPosts
+     * Метод выводит количества публикаций на каждую дату переданного в параметре
+     * year года или текущего года
+     * GET запрос /api/calendar
+     *
+     * @param year год в виде четырёхзначного числа, если не передан - возвращать
+     *             за текущий год
+     */
+    @GetMapping("/calendar")
+    public AbstractResponse numberOfPosts
+    (@RequestParam(required = false) Integer year) {
+        return generalService.numberOfPosts(year);
+    }
 }
