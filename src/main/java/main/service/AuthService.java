@@ -5,4 +5,5 @@ import main.response.AbstractResponse;
 
 public interface AuthService {
     AbstractResponse login(AuthRequest authRequest);
+    AbstractResponse check();
 }

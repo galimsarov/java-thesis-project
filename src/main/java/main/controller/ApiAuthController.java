@@ -4,10 +4,7 @@ import main.request.AuthRequest;
 import main.response.AbstractResponse;
 import main.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Класс ApiAuthController
@@ -31,5 +28,17 @@ public class ApiAuthController {
     @PostMapping("/login")
     public AbstractResponse login(@RequestBody AuthRequest authRequest) {
         return authService.login(authRequest);
+    }
+
+    /**
+     * Метод check
+     * Метод возвращает информацию о текущем авторизованном пользователе
+     * GET запрос /api/auth/check
+     *
+     * @see main.response.SuccessfullyLogin
+     */
+    @GetMapping("/check")
+    public AbstractResponse check() {
+        return authService.check();
     }
 }
