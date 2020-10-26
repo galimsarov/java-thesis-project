@@ -8,10 +8,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-//@Entity
-//@Table(name = "users")
-//@Getter
-//@Setter
 @Data
 @NoArgsConstructor
 @Entity

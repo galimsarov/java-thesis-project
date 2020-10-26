@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
+
 /**
  * Интрефейс PostCommentRepository. Слой для работы с БД и сущностью PostComment
  *
@@ -13,15 +15,14 @@ import org.springframework.stereotype.Repository;
  * @see org.springframework.data.jpa.repository.JpaRepository
  */
 @Repository
-public interface PostCommentRepository extends
-        JpaRepository<PostComment, Integer> {
+public interface PostCommentRepository extends JpaRepository<PostComment, Integer> {
     /**
-     * Метод findIdByText
-     * Возвращает Id комментария по его тексту
+     * Метод findIdByTime
+     * Возвращает Id комментария по времени его создания
      *
-     * @param text текст комментария
+     * @param time время создания комментария
      */
-    @Query(value = "SELECT id FROM post_comments where text = :query",
+    @Query(value = "select id from post_comments where time = :query",
             nativeQuery = true)
-    int findIdByText(@Param("query") String text);
+    int findIdByTime(@Param("query") Date time);
 }

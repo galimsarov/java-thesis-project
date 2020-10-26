@@ -33,4 +33,13 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      * @see User
      */
     User findByName(String name);
+
+    /**
+     * Метод findByEmail
+     * Возвращает экземпляр User по email
+     *
+     * @param email пользователя
+     * @see User
+     */
+    User findByEmail(String email);
 }

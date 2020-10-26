@@ -24,11 +24,12 @@ import java.util.Objects;
 @RequestMapping("/api")
 public class ApiGeneralController {
     @Autowired
-    GeneralService generalService;
+    private GeneralService generalService;
 
     /**
      * Метод getCommonData
      * Метод возвращает общую информацию о блоге
+     * GET запрос /api/init
      *
      * @see Blog
      */
@@ -75,7 +76,7 @@ public class ApiGeneralController {
      */
     @GetMapping("/tag")
     public AbstractResponse getListOfTags
-    (@RequestParam String query) {
+    (@RequestParam(required = false) String query) {
         return generalService.getListOfTags(query);
     }
 

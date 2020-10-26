@@ -161,7 +161,7 @@ public class GeneralServiceImpl implements GeneralService {
             postRepository.saveAndFlush(post);
 
             response = new IdResponse();
-            response.setId(commentRepository.findIdByText(comment.getText()));
+            response.setId(commentRepository.findIdByTime(comment.getTime()));
         }
         catch (EntityNotFoundException e) {
             return response;
@@ -178,6 +178,8 @@ public class GeneralServiceImpl implements GeneralService {
      */
     @Override
     public AbstractResponse getListOfTags(String query) {
+        if (query == null)
+            query = "";
         Query nativeQuery = entityManager.createNativeQuery
                 ("select name, count(name) from " +
                         "(select tags.name, new_tag2posts.postid from tags " +

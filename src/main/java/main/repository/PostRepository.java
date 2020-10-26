@@ -1,8 +1,6 @@
 package main.repository;
 
 import main.model.Post;
-import main.response.ListOfPostsResponse;
-import main.response.SpecificPostResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -261,4 +259,15 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "moderation_status = 'ACCEPTED' and time < current_time()",
             nativeQuery = true)
     int getActivePosts();
+
+    /**
+     * Метод getCountOfPostsForModeration
+     * Метод выводит количество постов необходимых для проверки модераторами
+     *
+     * @param moderatorId
+     */
+    @Query(value = "select count(*) from (select * from posts where " +
+            "moderation_status = 'NEW' and moderator_id = :query or " +
+            "moderator_id = 0) as new_posts", nativeQuery = true)
+    int getCountOfPostsForModeration(@Param("query") int moderatorId);
 }

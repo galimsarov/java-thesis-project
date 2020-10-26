@@ -14,7 +14,7 @@ import java.util.Objects;
 
 /**
  * Класс ApiPostController
- * REST-контроллер для работы с постами
+ * REST-контроллер, обрабатывает все запросы /api/post/*
  *
  * @version 1.0
  */
