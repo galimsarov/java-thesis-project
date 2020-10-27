@@ -1,6 +1,7 @@
 package main.controller;
 
 import main.request.AuthRequest;
+import main.request.EmailRequest;
 import main.response.AbstractResponse;
 import main.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,5 +41,19 @@ public class ApiAuthController {
     @GetMapping("/check")
     public AbstractResponse check() {
         return authService.check();
+    }
+
+    /**
+     * Метод restore
+     * Метод проверяет наличие в базе пользователя с указанным e-mail. Если
+     * пользователь найден, ему должно отправляться письмо со ссылкой на
+     * восстановление пароля
+     * POST запрос /api/auth/restore
+     *
+     * @see main.request.EmailRequest
+     */
+    @PostMapping("/restore")
+    public AbstractResponse restore(@RequestBody EmailRequest emailRequest) {
+        return authService.restore(emailRequest);
     }
 }

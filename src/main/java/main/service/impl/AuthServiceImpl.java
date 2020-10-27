@@ -6,16 +6,21 @@ import main.model.User;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
 import main.request.AuthRequest;
+import main.request.EmailRequest;
 import main.response.AbstractResponse;
 import main.response.SuccessfullyAddedPost;
 import main.response.SuccessfullyLogin;
 import main.response.UserAuthResponse;
 import main.service.AuthService;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * Класс AuthServiceImpl
@@ -29,6 +34,8 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final AuthConfiguration authConfiguration;
+    private final JavaMailSender javaMailSender;
+    private final HttpServletRequest request;
     /**
      * Метод login
      * Метод проверяет введенные данные и производит авторизацию пользователя
@@ -76,6 +83,49 @@ public class AuthServiceImpl implements AuthService {
             response.setResult(false);
             return response;
         }
+    }
+
+    /**
+     * Метод restore
+     * Метод проверяет наличие в базе пользователя с указанным e-mail. Если
+     * пользователь найден, ему должно отправляться письмо со ссылкой на
+     * восстановление пароля
+     *
+     * @see main.request.EmailRequest
+     */
+    @Override
+    public AbstractResponse restore(EmailRequest emailRequest) {
+        SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+        User user = userRepository.findByEmail(emailRequest.getEmail());
+        if (user != null) {
+            char[] chars = "abcdefghijklmnopqrstuvwxyz0123456789"
+                    .toCharArray();
+            StringBuilder sb = new StringBuilder(45);
+            Random random = new Random();
+            for (int i = 0; i < 45; i++) {
+                char c = chars[random.nextInt(chars.length)];
+                sb.append(c);
+            }
+            String output = sb.toString();
+
+            user.setCode(output);
+            userRepository.saveAndFlush(user);
+
+            output = request.getScheme() + "://" + request.getServerName()
+                    + ":" + request.getServerPort()
+                    + "/login/change-password/" + output;
+
+            SimpleMailMessage msg = new SimpleMailMessage();
+            msg.setTo(emailRequest.getEmail());
+            msg.setSubject("Ссылка для восстановления пароля");
+            msg.setText(output);
+            javaMailSender.send(msg);
+
+            response.setResult(true);
+        }
+        else
+            response.setResult(false);
+        return response;
     }
 
     private SuccessfullyLogin getAuthUserResponse(User user) {

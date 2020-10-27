@@ -22,7 +22,6 @@ public class AuthConfiguration {
         authorizations.put(key, value);
     }
 
-//    @Bean
     public Map<String, Integer> getAuths() {
         return authorizations;
     }
