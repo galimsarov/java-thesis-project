@@ -30,7 +30,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      * Возвращает экземпляр User по имени
      *
      * @param name имя пользователя
-     * @see User
      */
     User findByName(String name);
 
@@ -39,7 +38,14 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      * Возвращает экземпляр User по email
      *
      * @param email пользователя
-     * @see User
      */
     User findByEmail(String email);
+
+    /**
+     * Метод findByCode
+     * Возвращает экземпляр User по code
+     *
+     * @param code код восстановления пароля
+     */
+    User findByCode(String code);
 }

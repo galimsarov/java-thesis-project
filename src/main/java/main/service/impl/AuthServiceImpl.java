@@ -2,15 +2,15 @@ package main.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import main.config.AuthConfiguration;
+import main.model.CaptchaCode;
 import main.model.User;
+import main.repository.CaptchaCodeRepository;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
 import main.request.AuthRequest;
+import main.request.ChangePasswordRequest;
 import main.request.EmailRequest;
-import main.response.AbstractResponse;
-import main.response.SuccessfullyAddedPost;
-import main.response.SuccessfullyLogin;
-import main.response.UserAuthResponse;
+import main.response.*;
 import main.service.AuthService;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -33,6 +33,7 @@ import java.util.Random;
 public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PostRepository postRepository;
+    private final CaptchaCodeRepository captchaCodeRepository;
     private final AuthConfiguration authConfiguration;
     private final JavaMailSender javaMailSender;
     private final HttpServletRequest request;
@@ -126,6 +127,39 @@ public class AuthServiceImpl implements AuthService {
         else
             response.setResult(false);
         return response;
+    }
+
+    /**
+     * Метод changePassword
+     * Метод проверяет корректность кода восстановления пароля (параметр code)
+     * и корректность кодов капчи
+     *
+     * @see main.request.ChangePasswordRequest
+     */
+    @Override
+    public AbstractResponse changePassword(ChangePasswordRequest request) {
+        CaptchaCode captchaCode = captchaCodeRepository
+                .findByCode(request.getCaptcha());
+        if (captchaCode != null) {
+            if (captchaCode.getSecretCode()
+                    .equals(request.getCaptcha_secret())) {
+                User user = userRepository.findByCode(request.getCode());
+                if (user != null) {
+                    user.setPassword(request.getPassword());
+                    userRepository.saveAndFlush(user);
+                }
+                else
+                    return new CaptchaCodeError();
+
+                SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+                response.setResult(true);
+                return response;
+            }
+            else
+                return new CaptchaCodeError();
+        }
+        else
+            return new CaptchaCodeError();
     }
 
     private SuccessfullyLogin getAuthUserResponse(User user) {

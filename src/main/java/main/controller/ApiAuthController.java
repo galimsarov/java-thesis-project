@@ -1,6 +1,7 @@
 package main.controller;
 
 import main.request.AuthRequest;
+import main.request.ChangePasswordRequest;
 import main.request.EmailRequest;
 import main.response.AbstractResponse;
 import main.service.AuthService;
@@ -55,5 +56,19 @@ public class ApiAuthController {
     @PostMapping("/restore")
     public AbstractResponse restore(@RequestBody EmailRequest emailRequest) {
         return authService.restore(emailRequest);
+    }
+
+    /**
+     * Метод changePassword
+     * Метод проверяет корректность кода восстановления пароля (параметр code)
+     * и корректность кодов капчи
+     * POST запрос /api/auth/password
+     *
+     * @see main.request.ChangePasswordRequest
+     */
+    @PostMapping("/password")
+    public AbstractResponse changePassword(
+            @RequestBody ChangePasswordRequest request) {
+        return authService.changePassword(request);
     }
 }
