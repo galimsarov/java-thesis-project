@@ -3,6 +3,7 @@ package main.controller;
 import main.request.AuthRequest;
 import main.request.ChangePasswordRequest;
 import main.request.EmailRequest;
+import main.request.UserRequest;
 import main.response.AbstractResponse;
 import main.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,5 +71,17 @@ public class ApiAuthController {
     public AbstractResponse changePassword(
             @RequestBody ChangePasswordRequest request) {
         return authService.changePassword(request);
+    }
+
+    /**
+     * Метод register
+     * Метод создаёт пользователя в базе данных, если введённые данные верны
+     * POST запрос /api/auth/register
+     *
+     * @see main.request.UserRequest
+     */
+    @PostMapping("/register")
+    public AbstractResponse register(@RequestBody UserRequest request) {
+        return authService.register(request);
     }
 }

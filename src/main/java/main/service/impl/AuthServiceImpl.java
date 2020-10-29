@@ -10,6 +10,7 @@ import main.repository.UserRepository;
 import main.request.AuthRequest;
 import main.request.ChangePasswordRequest;
 import main.request.EmailRequest;
+import main.request.UserRequest;
 import main.response.*;
 import main.service.AuthService;
 import org.springframework.mail.SimpleMailMessage;
@@ -19,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
 import java.util.Map;
 import java.util.Random;
 
@@ -160,6 +162,55 @@ public class AuthServiceImpl implements AuthService {
         }
         else
             return new CaptchaCodeError();
+    }
+
+    /**
+     * Метод register
+     * Метод создаёт пользователя в базе данных, если введённые данные верны
+     *
+     * @see main.request.UserRequest
+     */
+    @Override
+    public AbstractResponse register(UserRequest request) {
+        CaptchaCode captchaCode = captchaCodeRepository
+                .findByCode(request.getCaptcha());
+        if (captchaCode != null) {
+            if (captchaCode.getSecretCode()
+                    .equals(request.getCaptcha_secret())) {
+                User user = userRepository.findByEmail(request.getE_mail());
+                if (user == null) {
+                    if (request.getPassword().length() >= 6) {
+                        User newUser = new User();
+                        newUser.setPassword(request.getPassword());
+                        newUser.setEmail(request.getE_mail());
+                        newUser.setName(request.getName());
+                        newUser.setRegTime(new Date());
+                        userRepository.saveAndFlush(newUser);
+
+                        SuccessfullyAddedPost response =
+                                new SuccessfullyAddedPost();
+                        response.setResult(true);
+                        return response;
+                    }
+                    else {
+                        System.out.println("Пароль короче 6-ти символов");
+                        return new UserCodeError();
+                    }
+                }
+                else {
+                    System.out.println("Этот e-mail уже зарегистрирован");
+                    return new UserCodeError();
+                }
+            }
+            else {
+                System.out.println("Секретная капча не совпала");
+                return new UserCodeError();
+            }
+        }
+        else {
+            System.out.println("Код капчи не найден");
+            return new UserCodeError();
+        }
     }
 
     private SuccessfullyLogin getAuthUserResponse(User user) {
