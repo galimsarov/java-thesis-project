@@ -53,7 +53,7 @@ public class PostResponseMapper {
 
     private String getAnnounceDTO(Post post) {
         String answer = post.getText();
-        int sizeOfAnnounce = 30;
+        int sizeOfAnnounce = 200;
         if (answer.length() < sizeOfAnnounce)
             return answer;
         else {

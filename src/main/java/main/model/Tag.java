@@ -20,12 +20,6 @@ public class Tag {
     @Column(name = "name", nullable = false, unique = true)
     private String name;
 
-//    @ManyToMany(mappedBy = "posts", fetch = FetchType.LAZY,
-//            cascade = {CascadeType.DETACH, CascadeType.MERGE,
-//                    CascadeType.PERSIST, CascadeType.REFRESH})
-//    @JoinTable(name = "tag2post",
-//        joinColumns = @JoinColumn(name = "tag_id"),
-//        inverseJoinColumns = @JoinColumn(name = "post_id"))
     @ManyToMany(mappedBy = "tagSet")
     private Set<Post> postSet = new HashSet<>();
 
