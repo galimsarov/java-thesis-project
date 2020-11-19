@@ -49,7 +49,7 @@ public class PostServiceImpl implements PostService {
                 (int offset, int limit, String mode) {
         List<PostResponse> postDTOList = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
-        Pageable pageable = PageRequest.of(offset, limit);
+        Pageable pageable = PageRequest.of(offset/10, limit);
         Page<Post> postPage;
         switch (mode) {
             case "best":
@@ -73,7 +73,7 @@ public class PostServiceImpl implements PostService {
             postDTOList.add(postDTO);
         }
         ListOfPostsResponse answer = new ListOfPostsResponse();
-        answer.setCount(postDTOList.size());
+        answer.setCount(postRepository.findCountOfPosts());
         answer.setPosts(postDTOList);
         return answer;
     }
@@ -93,7 +93,7 @@ public class PostServiceImpl implements PostService {
         List<PostResponse> postDTOList = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper
                 (PostResponseMapper.class);
-        Pageable pageable = PageRequest.of(offset, limit);
+        Pageable pageable = PageRequest.of(offset/10, limit);
         List<Post> postList = postRepository.
                 searchForPostsByQuery(query, pageable);
         for (Post post : postList) {
@@ -101,7 +101,7 @@ public class PostServiceImpl implements PostService {
             postDTOList.add(postDTO);
         }
         ListOfPostsResponse answer = new ListOfPostsResponse();
-        answer.setCount(postDTOList.size());
+        answer.setCount(postRepository.getCountOfPostsByQuery(query));
         answer.setPosts(postDTOList);
         return answer;
     }
@@ -120,7 +120,7 @@ public class PostServiceImpl implements PostService {
             (int offset, int limit, String date) {
         List<PostResponse> postDTOList = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
-        Pageable pageable = PageRequest.of(offset, limit);
+        Pageable pageable = PageRequest.of(offset/10, limit);
         List<Post> postList = postRepository.
                 getPostsByDate(dateBefore(date), dateAfter(date), pageable);
         for (Post post : postList) {
@@ -128,7 +128,8 @@ public class PostServiceImpl implements PostService {
             postDTOList.add(postDTO);
         }
         ListOfPostsResponse answer = new ListOfPostsResponse();
-        answer.setCount(postDTOList.size());
+        answer.setCount(postRepository
+                .getCountOfPostsByDate(dateBefore(date), dateAfter(date)));
         answer.setPosts(postDTOList);
         return answer;
     }
@@ -147,7 +148,7 @@ public class PostServiceImpl implements PostService {
             (int offset, int limit, String tag) {
         List<PostResponse> postDTOList = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
-        Pageable pageable = PageRequest.of(offset, limit);
+        Pageable pageable = PageRequest.of(offset/10, limit);
         List<Post> postList = postRepository.
                 getPostsByTag(tag, pageable);
         for (Post post : postList) {
@@ -155,7 +156,7 @@ public class PostServiceImpl implements PostService {
             postDTOList.add(postDTO);
         }
         ListOfPostsResponse answer = new ListOfPostsResponse();
-        answer.setCount(postDTOList.size());
+        answer.setCount(postRepository.getCountOfPostsByTag(tag));
         answer.setPosts(postDTOList);
         return answer;
     }
@@ -174,8 +175,9 @@ public class PostServiceImpl implements PostService {
             (int offset, int limit, String status) {
         List<PostResponse> postResponseList = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
-        Pageable pageable = PageRequest.of(offset, limit);
+        Pageable pageable = PageRequest.of(offset/10, limit);
         List<Post> postList;
+        int count;
 
         Authentication auth = SecurityContextHolder.getContext().
                 getAuthentication();
@@ -184,19 +186,22 @@ public class PostServiceImpl implements PostService {
         switch (status) {
             case "new":
                 postList = postRepository.getNewPosts(name, pageable);
+                count = postRepository.getCountOfNewPosts(name);
                 break;
             case "declined":
                 postList = postRepository.getDeclinedPosts(name, pageable);
+                count = postRepository.getCountOfDeclinedPosts(name);
                 break;
             default:
                 postList = postRepository.getAcceptedPosts(name, pageable);
+                count = postRepository.getCountOfAcceptedPosts(name);
         }
         for (Post post : postList) {
             PostResponse postResponse = mapper.postToPostDTO(post);
             postResponseList.add(postResponse);
         }
         ListOfPostsResponse answer = new ListOfPostsResponse();
-        answer.setCount(postResponseList.size());
+        answer.setCount(count);
         answer.setPosts(postResponseList);
         return answer;
     }
@@ -216,8 +221,9 @@ public class PostServiceImpl implements PostService {
         List<PostResponse> postResponseList = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper
                 (PostResponseMapper.class);
-        Pageable pageable = PageRequest.of(offset, limit);
+        Pageable pageable = PageRequest.of(offset/10, limit);
         List<Post> postList;
+        int count;
 
         Authentication auth = SecurityContextHolder.getContext().
                 getAuthentication();
@@ -226,22 +232,26 @@ public class PostServiceImpl implements PostService {
         switch (status) {
             case "inactive":
                 postList = postRepository.getMyInactivePosts(name, pageable);
+                count = postRepository.getCountOfMyInactivePosts(name);
                 break;
             case "pending":
                 postList = postRepository.getMyPendingPosts(name, pageable);
+                count = postRepository.getCountOfMyPendingPosts(name);
                 break;
             case "declined":
                 postList = postRepository.getMyDeclinedPosts(name, pageable);
+                count = postRepository.getCountOfMyDeclinedPosts(name);
                 break;
             default:
                 postList = postRepository.getMyPublishedPosts(name, pageable);
+                count = postRepository.getCountOfMyPublishedPosts(name);
         }
         for (Post post : postList) {
             PostResponse postResponse = mapper.postToPostDTO(post);
             postResponseList.add(postResponse);
         }
         ListOfPostsResponse answer = new ListOfPostsResponse();
-        answer.setCount(postResponseList.size());
+        answer.setCount(count);
         answer.setPosts(postResponseList);
         return answer;
     }
@@ -360,7 +370,7 @@ public class PostServiceImpl implements PostService {
                 getAuthentication();
         String name = auth.getName();
         if (name.equals("anonymousUser"))
-            return post.getViewCount();
+            return post.getViewCount() + 1;
         if (userRepository.isAdmin(name) == 1)
             return post.getViewCount();
         if (post.getUser().getName().equals(name))

@@ -10,4 +10,5 @@ public class CommentResponse {
     private long timestamp;
     private String text;
     private UserWithPhotoResponse user;
+    private int parentId;
 }
