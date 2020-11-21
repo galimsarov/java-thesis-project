@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Класс PostResponseMapper
@@ -84,7 +86,18 @@ public class PostResponseMapper {
     }
 
     private String getAnnounceDTO(Post post) {
-        String answer = post.getText();
+        Pattern pattern = Pattern.compile("</?[a-z]+>");
+        Matcher matcher = pattern.matcher(post.getText());
+        String answer = matcher.replaceAll("...");
+
+        pattern = Pattern.compile("&nbsp;");
+        matcher = pattern.matcher(answer);
+        answer = matcher.replaceAll("...");
+
+        pattern = Pattern.compile("<[a-z]+ .+\">");
+        matcher = pattern.matcher(answer);
+        answer = matcher.replaceAll("...");
+
         int sizeOfAnnounce = 200;
         if (answer.length() < sizeOfAnnounce)
             return answer;
