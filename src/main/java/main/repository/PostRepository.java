@@ -191,185 +191,166 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
      * Метод getNewPosts
      * Метод выводит все посты со статусом "NEW"
      *
-     * @param name имя пользователя - модератора
+     * @param id
      * @param pageable параметры вывода на страницу
      */
-    @Query(value = "select * from posts join (select id, name from users " +
-            "where name = :query) as admins on (posts.moderator_id = " +
-            "admins.id or posts.moderator_id = 0) where posts.is_active = 1 " +
-            "and posts.moderation_status = 'NEW'", nativeQuery = true)
-    List<Post> getNewPosts(@Param("query") String name, Pageable pageable);
+    @Query(value = "select * from posts where is_active = 1 and " +
+            "posts.moderation_status = 'NEW' and (moderator_id = :query or " +
+            "moderator_id = 0)", nativeQuery = true)
+    List<Post> getNewPosts(@Param("query") int id, Pageable pageable);
 
     /**
      * Метод getCountOfNewPosts
      * Метод выводит количество постов со статусом "NEW" для постраничного вывода
      *
-     * @param name имя пользователя - модератора
+     * @param id
      */
-    @Query(value = "select count(*) from posts join (select id, name from " +
-            "users where name = :query) as admins on (posts.moderator_id = " +
-            "admins.id or posts.moderator_id = 0) where posts.is_active = 1 " +
-            "and posts.moderation_status = 'NEW'", nativeQuery = true)
-    int getCountOfNewPosts(@Param("query") String name);
+    @Query(value = "select count(*) from posts where is_active = 1 and " +
+            "posts.moderation_status = 'NEW' and (moderator_id = :query or " +
+            "moderator_id = 0)", nativeQuery = true)
+    int getCountOfNewPosts(@Param("query") int id);
 
     /**
      * Метод getDeclinedPosts
      * Метод выводит все посты со статусом "DECLINED"
      *
-     * @param name имя пользователя - модератора
+     * @param id
      * @param pageable параметры вывода на страницу
      */
-    @Query(value = "select * from posts join (select id, name from users " +
-            "where name = :query) as admins on (posts.moderator_id = " +
-            "admins.id or posts.moderator_id = 0) where posts.is_active = 1 " +
-            "and posts.moderation_status = 'DECLINED'", nativeQuery = true)
-    List<Post> getDeclinedPosts(@Param("query") String name, Pageable pageable);
+    @Query(value = "select * from posts where is_active = 1 and " +
+            "posts.moderation_status = 'DECLINED' and (moderator_id = :query " +
+            "or moderator_id = 0)", nativeQuery = true)
+    List<Post> getDeclinedPosts(@Param("query") int id, Pageable pageable);
 
     /**
      * Метод getCountOfDeclinedPosts
      * Метод выводит количество постов со статусом "DECLINED" для постраничного
      * вывода
      *
-     * @param name имя пользователя - модератора
+     * @param id
      */
-    @Query(value = "select count(*) from posts join (select id, name from " +
-            "users where name = :query) as admins on (posts.moderator_id = " +
-            "admins.id or posts.moderator_id = 0) where posts.is_active = 1 " +
-            "and posts.moderation_status = 'DECLINED'", nativeQuery = true)
-    int getCountOfDeclinedPosts(@Param("query") String name);
+    @Query(value = "select count(*) from posts where is_active = 1 and " +
+            "posts.moderation_status = 'DECLINED' and (moderator_id = :query " +
+            "or moderator_id = 0)", nativeQuery = true)
+    int getCountOfDeclinedPosts(@Param("query") int id);
 
     /**
      * Метод getAcceptedPosts
      * Метод выводит все посты со статусом "ACCEPTED"
      *
-     * @param name имя пользователя - модератора
+     * @param id
      * @param pageable параметры вывода на страницу
      */
-    @Query(value = "select * from posts join (select id, name from users " +
-            "where name = :query) as admins on (posts.moderator_id = " +
-            "admins.id or posts.moderator_id = 0) where posts.is_active = 1 " +
-            "and posts.moderation_status = 'ACCEPTED'", nativeQuery = true)
-    List<Post> getAcceptedPosts(@Param("query") String name, Pageable pageable);
+    @Query(value = "select * from posts where is_active = 1 and " +
+            "posts.moderation_status = 'ACCEPTED' and (moderator_id = :query " +
+            "or moderator_id = 0)", nativeQuery = true)
+    List<Post> getAcceptedPosts(@Param("query") int id, Pageable pageable);
 
     /**
      * Метод getCountOfAcceptedPosts
      * Метод выводит количество постов со статусом "ACCEPTED" для постраничного
      * вывода
      *
-     * @param name имя пользователя - модератора
+     * @param id
      */
-    @Query(value = "select count(*) from posts join (select id, name from " +
-            "users where name = :query) as admins on (posts.moderator_id = " +
-            "admins.id or posts.moderator_id = 0) where posts.is_active = 1 " +
-            "and posts.moderation_status = 'ACCEPTED'", nativeQuery = true)
-    int getCountOfAcceptedPosts(@Param("query") String name);
+    @Query(value = "select count(*) from posts where is_active = 1 and " +
+            "posts.moderation_status = 'ACCEPTED' and (moderator_id = :query " +
+            "or moderator_id = 0)", nativeQuery = true)
+    int getCountOfAcceptedPosts(@Param("query") int id);
 
     /**
      * Метод getMyInactivePosts
      * Метод выводит только те неактивные посты, которые создал я
      *
-     * @param name имя пользователя, чьи посты выводим
+     * @param id
      * @param pageable параметры вывода на страницу
      */
-    @Query(value = "select * from posts join (select id, name from users " +
-            "where name = :query) as temp_users on posts.user_id = " +
-            "temp_users.id where posts.is_active = 0",
+    @Query(value = "select * from posts where is_active = 0 and user_id = :query",
             nativeQuery = true)
-    List<Post> getMyInactivePosts(@Param("query") String name, Pageable pageable);
+    List<Post> getMyInactivePosts(@Param("query") int id, Pageable pageable);
 
     /**
      * Метод getCountOfMyInactivePosts
      * Метод выводит количество неактивных постов, которые создал я
      *
-     * @param name имя пользователя, чьи посты выводим
+     * @param id
      */
-    @Query(value = "select count(*) from posts join (select id, name from users " +
-            "where name = :query) as temp_users on posts.user_id = " +
-            "temp_users.id where posts.is_active = 0", nativeQuery = true)
-    int getCountOfMyInactivePosts(@Param("query") String name);
+    @Query(value = "select count(*) from posts where is_active = 0 and " +
+            "user_id = :query", nativeQuery = true)
+    int getCountOfMyInactivePosts(@Param("query") int id);
 
     /**
      * Метод getMyPendingPosts
      * Метод выводит только те активные, ожидающие утверждения модератором
      * посты, которые создал я
      *
-     * @param name имя пользователя, чьи посты выводим
+     * @param id
      * @param pageable параметры вывода на страницу
      */
-    @Query(value = "select * from posts join (select id, name from users " +
-            "where name = :query) as temp_users on posts.user_id = " +
-            "temp_users.id where posts.is_active = 1 and " +
-            "posts.moderation_status = 'NEW'", nativeQuery = true)
-    List<Post> getMyPendingPosts(@Param("query") String name, Pageable pageable);
+    @Query(value = "select * from posts where is_active = 1 and " +
+            "moderation_status = 'NEW' and user_id = :query", nativeQuery = true)
+    List<Post> getMyPendingPosts(@Param("query") int id, Pageable pageable);
 
     /**
      * Метод getCountOfMyPendingPosts
      * Метод выводит количество активных постов, ожидающих утверждения
      * модератором постов, которые создал я
      *
-     * @param name имя пользователя, чьи посты выводим
+     * @param id
      */
-    @Query(value = "select count(*) from posts join (select id, name from " +
-            "users where name = :query) as temp_users on posts.user_id = " +
-            "temp_users.id where posts.is_active = 1 and " +
-            "posts.moderation_status = 'NEW'", nativeQuery = true)
-    int getCountOfMyPendingPosts(@Param("query") String name);
+    @Query(value = "select count(*) from posts where is_active = 1 and " +
+            "moderation_status = 'NEW' and user_id = :query", nativeQuery = true)
+    int getCountOfMyPendingPosts(@Param("query") int id);
 
     /**
      * Метод getMyDeclinedPosts
      * Метод выводит только те активные, отклонённые модератором
      * посты, которые создал я
      *
-     * @param name имя пользователя, чьи посты выводим
+     * @param id
      * @param pageable параметры вывода на страницу
      */
-    @Query(value = "select * from posts join (select id, name from users " +
-            "where name = :query) as temp_users on posts.user_id = " +
-            "temp_users.id where posts.is_active = 1 and " +
-            "posts.moderation_status = 'DECLINED'",
+    @Query(value = "select * from posts where is_active = 1 and " +
+            "moderation_status = 'DECLINED' and user_id = :query",
             nativeQuery = true)
-    List<Post> getMyDeclinedPosts(@Param("query") String name, Pageable pageable);
+    List<Post> getMyDeclinedPosts(@Param("query") int id, Pageable pageable);
 
     /**
      * Метод getCountOfMyDeclinedPosts
      * Метод выводит количество активных, отклонённых модератором постов,
      * которые создал я
      *
-     * @param name имя пользователя, чьи посты выводим
+     * @param id
      */
-    @Query(value = "select count(*) from posts join (select id, name from " +
-            "users where name = :query) as temp_users on posts.user_id = " +
-            "temp_users.id where posts.is_active = 1 and " +
-            "posts.moderation_status = 'DECLINED'", nativeQuery = true)
-    int getCountOfMyDeclinedPosts(@Param("query") String name);
+    @Query(value = "select count(*) from posts where is_active = 1 and " +
+            "moderation_status = 'DECLINED' and user_id = :query",
+            nativeQuery = true)
+    int getCountOfMyDeclinedPosts(@Param("query") int id);
 
     /**
      * Метод getMyPublishedPosts
      * Метод выводит только те активные, опубликованные по итогам модерации
      * посты, которые создал я
      *
-     * @param name имя пользователя, чьи посты выводим
+     * @param id
      * @param pageable параметры вывода на страницу
      */
-    @Query(value = "select * from posts join (select id, name from users " +
-            "where name = :query) as temp_users on posts.user_id = " +
-            "temp_users.id where posts.is_active = 1 and " +
-            "posts.moderation_status = 'ACCEPTED'",
+    @Query(value = "select * from posts where is_active = 1 and " +
+            "moderation_status = 'ACCEPTED' and user_id = :query",
             nativeQuery = true)
-    List<Post> getMyPublishedPosts(@Param("query") String name, Pageable pageable);
+    List<Post> getMyPublishedPosts(@Param("query") int id, Pageable pageable);
 
     /**
      * Метод getCountOfMyPublishedPosts
      * Метод выводит количество активных, опубликованных по итогам модерации
      * постов, которые создал я
      *
-     * @param name имя пользователя, чьи посты выводим
+     * @param id
      */
-    @Query(value = "select count(*) from posts join (select id, name from " +
-            "users where name = :query) as temp_users on posts.user_id = " +
-            "temp_users.id where posts.is_active = 1 and " +
-            "posts.moderation_status = 'ACCEPTED'", nativeQuery = true)
-    int getCountOfMyPublishedPosts(@Param("query") String name);
+    @Query(value = "select count(*) from posts where is_active = 1 and " +
+            "moderation_status = 'ACCEPTED' and user_id = :query",
+            nativeQuery = true)
+    int getCountOfMyPublishedPosts(@Param("query") int id);
 
     /**
      * Метод getPost

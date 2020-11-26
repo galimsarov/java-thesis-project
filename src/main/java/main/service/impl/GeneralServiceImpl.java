@@ -1,6 +1,7 @@
 package main.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import main.config.AuthConfiguration;
 import main.model.Post;
 import main.model.PostComment;
 import main.model.User;
@@ -12,9 +13,8 @@ import main.request.CommentRequest;
 import main.request.PostModerationRequest;
 import main.response.*;
 import main.service.GeneralService;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.EntityManager;
@@ -41,6 +41,7 @@ public class GeneralServiceImpl implements GeneralService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final PostCommentRepository commentRepository;
+    private final AuthConfiguration authConfiguration;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -146,9 +147,10 @@ public class GeneralServiceImpl implements GeneralService {
                 String tempText = parentComment.getText();
             }
 
-            Authentication auth = SecurityContextHolder.getContext().
-                    getAuthentication();
-            User user = userRepository.findByName(auth.getName());
+            String currentSession = RequestContextHolder
+                    .currentRequestAttributes().getSessionId();
+            int id = authConfiguration.getAuths().get(currentSession);
+            User user = userRepository.getOne(id);
 
             comment.setParentId(commentRequest.getParent_id());
             comment.setPost(post);
@@ -233,9 +235,10 @@ public class GeneralServiceImpl implements GeneralService {
         SuccessfullyAddedPost response = new SuccessfullyAddedPost();
         response.setResult(false);
 
-        Authentication auth = SecurityContextHolder.getContext().
-                getAuthentication();
-        User user = userRepository.findByName(auth.getName());
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        int id = authConfiguration.getAuths().get(currentSession);
+        User user = userRepository.findById(id).get();
 
         if (user.isModerator()) {
             int postId = request.getPost_id();

@@ -40,15 +40,14 @@ public class BasicConfiguration extends WebSecurityConfigurerAdapter {
         http
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers(HttpMethod.GET,
-                        "/api/post/moderation*", "/api/post/my*")
-                .authenticated()
-                .antMatchers(HttpMethod.POST,
-                        "/api/post", "/api/image", "/api/comment",
-                        "/api/moderation")
-                .authenticated()
-                .antMatchers(HttpMethod.PUT)
-                .authenticated()
+//                .antMatchers(HttpMethod.GET,
+//                        "/api/post/moderation*", "/api/post/my*")
+//                .authenticated()
+//                .antMatchers(HttpMethod.POST,
+//                        "/api/post", "/api/image", "/api/comment",
+//                        "/api/moderation")
+//                .authenticated()
+//                .antMatchers(HttpMethod.PUT).authenticated()
                 .anyRequest().permitAll()
                 .and()
                 .httpBasic();

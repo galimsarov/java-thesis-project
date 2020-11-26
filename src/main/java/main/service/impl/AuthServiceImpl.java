@@ -15,13 +15,11 @@ import main.response.*;
 import main.service.AuthService;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
-import java.util.Map;
 import java.util.Random;
 
 /**
@@ -50,7 +48,11 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(authRequest.getE_mail());
         if (user.getPassword().equals(authRequest.getPassword())) {
             SuccessfullyLogin response = getAuthUserResponse(user);
-            authConfiguration.addAuth(user.getName(), user.getId());
+
+            String sessionId = RequestContextHolder
+                    .currentRequestAttributes().getSessionId();
+            authConfiguration.addAuth(sessionId, user.getId());
+
             return response;
         }
         else {
@@ -68,22 +70,27 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public AbstractResponse check() {
-        Authentication auth = SecurityContextHolder.getContext().
-                getAuthentication();
-        User user = userRepository.findByName(auth.getName());
-        Map<String, Integer> authorizations = authConfiguration.getAuths();
-        try {
-            if (authorizations.keySet().contains(user.getName()))
-                return getAuthUserResponse(user);
-            else {
-                SuccessfullyAddedPost response = new SuccessfullyAddedPost();
-                response.setResult(false);
-                return response;
-            }
+
+//        System.out.println("CHECK SERVICE STARTED\n");
+
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        if (authConfiguration.getAuths().containsKey(currentSession)) {
+
+//            System.out.println("CHECK SERVICE AND CONTROLLER FINISHED: " +
+//                        "successful!\n");
+
+            User user = userRepository.findById
+                    (authConfiguration.getAuths().get(currentSession)).get();
+            return getAuthUserResponse(user);
         }
-        catch (NullPointerException e) {
+        else {
             SuccessfullyAddedPost response = new SuccessfullyAddedPost();
-            response.setResult(false);
+                response.setResult(false);
+
+//            System.out.println("CHECK SERVICE AND CONTROLLER FINISHED: " +
+//                        "error!\n");
+
             return response;
         }
     }

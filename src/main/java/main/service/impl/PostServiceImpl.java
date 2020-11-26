@@ -1,6 +1,7 @@
 package main.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import main.config.AuthConfiguration;
 import main.mapper.PostResponseMapper;
 import main.model.Post;
 import main.model.Tag;
@@ -16,9 +17,8 @@ import org.mapstruct.factory.Mappers;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
 
 import java.util.*;
 
@@ -34,6 +34,7 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
+    private final AuthConfiguration authConfiguration;
 
     /**
      * Метод getListOfPostResponse
@@ -179,22 +180,22 @@ public class PostServiceImpl implements PostService {
         List<Post> postList;
         int count;
 
-        Authentication auth = SecurityContextHolder.getContext().
-                getAuthentication();
-        String name = auth.getName();
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        int id = authConfiguration.getAuths().get(currentSession);
 
         switch (status) {
             case "new":
-                postList = postRepository.getNewPosts(name, pageable);
-                count = postRepository.getCountOfNewPosts(name);
+                postList = postRepository.getNewPosts(id, pageable);
+                count = postRepository.getCountOfNewPosts(id);
                 break;
             case "declined":
-                postList = postRepository.getDeclinedPosts(name, pageable);
-                count = postRepository.getCountOfDeclinedPosts(name);
+                postList = postRepository.getDeclinedPosts(id, pageable);
+                count = postRepository.getCountOfDeclinedPosts(id);
                 break;
             default:
-                postList = postRepository.getAcceptedPosts(name, pageable);
-                count = postRepository.getCountOfAcceptedPosts(name);
+                postList = postRepository.getAcceptedPosts(id, pageable);
+                count = postRepository.getCountOfAcceptedPosts(id);
         }
         for (Post post : postList) {
             PostResponse postResponse = mapper.postToPostDTO(post);
@@ -225,26 +226,26 @@ public class PostServiceImpl implements PostService {
         List<Post> postList;
         int count;
 
-        Authentication auth = SecurityContextHolder.getContext().
-                getAuthentication();
-        String name = auth.getName();
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        int id = authConfiguration.getAuths().get(currentSession);
 
         switch (status) {
             case "inactive":
-                postList = postRepository.getMyInactivePosts(name, pageable);
-                count = postRepository.getCountOfMyInactivePosts(name);
+                postList = postRepository.getMyInactivePosts(id, pageable);
+                count = postRepository.getCountOfMyInactivePosts(id);
                 break;
             case "pending":
-                postList = postRepository.getMyPendingPosts(name, pageable);
-                count = postRepository.getCountOfMyPendingPosts(name);
+                postList = postRepository.getMyPendingPosts(id, pageable);
+                count = postRepository.getCountOfMyPendingPosts(id);
                 break;
             case "declined":
-                postList = postRepository.getMyDeclinedPosts(name, pageable);
-                count = postRepository.getCountOfMyDeclinedPosts(name);
+                postList = postRepository.getMyDeclinedPosts(id, pageable);
+                count = postRepository.getCountOfMyDeclinedPosts(id);
                 break;
             default:
-                postList = postRepository.getMyPublishedPosts(name, pageable);
-                count = postRepository.getCountOfMyPublishedPosts(name);
+                postList = postRepository.getMyPublishedPosts(id, pageable);
+                count = postRepository.getCountOfMyPublishedPosts(id);
         }
         for (Post post : postList) {
             PostResponse postResponse = mapper.postToPostDTO(post);
@@ -294,12 +295,12 @@ public class PostServiceImpl implements PostService {
             postRequest.setTimestamp(newTimeStamp);
         }
 
-        Authentication auth = SecurityContextHolder.getContext().
-                getAuthentication();
-        User user = userRepository.findByName(auth.getName());
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        int id = authConfiguration.getAuths().get(currentSession);
 
         Post post = new Post();
-        post = createNewPost(postRequest, user, post);
+        createNewPost(postRequest, userRepository.getOne(id), post);
         post.setModerationStatus(PostStatus.NEW);
 
         postRepository.saveAndFlush(post);
@@ -327,12 +328,14 @@ public class PostServiceImpl implements PostService {
             postRequest.setTimestamp(newTimeStamp);
         }
 
-        Authentication auth = SecurityContextHolder.getContext().
-                getAuthentication();
-        User user = userRepository.findByName(auth.getName());
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        int userIdFromContext = authConfiguration
+                .getAuths().get(currentSession);
+        User user = userRepository.getOne(userIdFromContext);
 
-        if ((user.getId() != id) &&
-                (userRepository.isAdmin(user.getName()) == 0)) {
+        if ((userIdFromContext != id) &&
+                (userRepository.isAdmin(userIdFromContext) == 0)) {
             ErrorAddingPost errorAuthResponse = new ErrorAddingPost();
             errorAuthResponse.setResult(false);
             TextError textError = new TextError();
@@ -344,7 +347,7 @@ public class PostServiceImpl implements PostService {
         }
 
         Post post = postRepository.getOne(id);
-        post = createNewPost(postRequest, user, post);
+        createNewPost(postRequest, user, post);
         if (user.getId() == id)
             post.setModerationStatus(PostStatus.NEW);
 
@@ -366,16 +369,19 @@ public class PostServiceImpl implements PostService {
     }
 
     private int checkViewCount(Post post) {
-        Authentication auth = SecurityContextHolder.getContext().
-                getAuthentication();
-        String name = auth.getName();
-        if (name.equals("anonymousUser"))
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        try {
+            int id = authConfiguration.getAuths().get(currentSession);
+            if (userRepository.isAdmin(id) == 1)
+                return post.getViewCount();
+            if (post.getUser().getId() == id)
+                return post.getViewCount();
             return post.getViewCount() + 1;
-        if (userRepository.isAdmin(name) == 1)
-            return post.getViewCount();
-        if (post.getUser().getName().equals(name))
-            return post.getViewCount();
-        return post.getViewCount() + 1;
+        }
+        catch (NullPointerException e) {
+            return post.getViewCount() + 1;
+        }
     }
 
     private ErrorAddingPost checkPostData(PostRequest postRequest) {
@@ -415,7 +421,6 @@ public class PostServiceImpl implements PostService {
         post.setTime(new Date(postRequest.getTimestamp()));
         post.setTitle(postRequest.getTitle());
         post.setText(postRequest.getText());
-        post.setViewCount(0);
         post.setUser(user);
 
         List<String> namesOfCurrentTags = tagRepository.findNamesOfTags();
