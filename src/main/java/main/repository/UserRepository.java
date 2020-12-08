@@ -24,9 +24,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     @Query(value = "select is_moderator from users where id = :query",
             nativeQuery = true)
     int isAdmin(@Param("query") int id);
-//    @Query(value = "select is_moderator from users where name = :query",
-//            nativeQuery = true)
-//    int isAdmin(@Param("query") String name);
 
     /**
      * Метод findByName

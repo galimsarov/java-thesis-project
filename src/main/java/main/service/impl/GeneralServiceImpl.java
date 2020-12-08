@@ -10,21 +10,28 @@ import main.repository.PostCommentRepository;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
 import main.request.CommentRequest;
+import main.request.EditProfileWithPasswordRequest;
+import main.request.EditProfileWithPhotoRequest;
 import main.request.PostModerationRequest;
 import main.response.*;
 import main.service.GeneralService;
+import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import javax.servlet.http.HttpServletRequest;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 
 /**
@@ -312,5 +319,212 @@ public class GeneralServiceImpl implements GeneralService {
         response.setPosts(posts);
 
         return response;
+    }
+
+    /**
+     * Метод editProfile
+     * Метод обрабатывает информацию, введённую пользователем в форму
+     * редактирования своего профиля
+     *
+     * @see EditProfileWithPasswordRequest
+     */
+    @Override
+    public AbstractResponse editProfile(
+            EditProfileWithPasswordRequest request) {
+        User user = getUser(authConfiguration, userRepository);
+
+        EmailError emailError = checkEmail
+                (userRepository, request.getEmail(), user.getEmail());
+        NameError nameError = checkName(request.getName());
+        PasswordError passwordError = new PasswordError();
+        if (request.getPassword() != null)
+            passwordError = checkPassword(request.getPassword());
+
+        if ((emailError.getEmail() != null) ||
+                (nameError.getName() != null) ||
+                (passwordError.getPassword() != null)) {
+            ErrorAddingPost response = new ErrorAddingPost();
+            response.setResult(false);
+            response.setErrors(new ArrayList<>());
+            if (emailError.getEmail() != null) {
+                List<AbstractError> temp = response.getErrors();
+                temp.add(emailError);
+                response.setErrors(temp);
+            }
+            if (nameError.getName() != null) {
+                List<AbstractError> temp = response.getErrors();
+                temp.add(nameError);
+                response.setErrors(temp);
+            }
+            if (passwordError.getPassword() != null) {
+                List<AbstractError> temp = response.getErrors();
+                temp.add(passwordError);
+                response.setErrors(temp);
+            }
+            return response;
+        }
+        else {
+            user.setName(request.getName());
+            user.setEmail(request.getEmail());
+            if (request.getPassword() != null)
+                user.setPassword(request.getPassword());
+            if (request.getRemovePhoto() == 1)
+                user.setPhoto(null);
+
+            userRepository.saveAndFlush(user);
+
+            SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+            response.setResult(true);
+            return response;
+        }
+    }
+
+    /**
+     * Метод editProfile
+     * Метод обрабатывает информацию, введённую пользователем в форму
+     * редактирования своего профиля
+     *
+     * @see EditProfileWithPhotoRequest
+     */
+    @Override
+    public AbstractResponse editProfile(
+            EditProfileWithPhotoRequest requestWithPhoto) throws IOException {
+        User user = getUser(authConfiguration, userRepository);
+
+        EmailError emailError = checkEmail
+                (userRepository, requestWithPhoto.getEmail(), user.getEmail());
+        NameError nameError = checkName(requestWithPhoto.getName());
+        PasswordError passwordError = new PasswordError();
+        if (requestWithPhoto.getPassword() != null)
+            passwordError = checkPassword(requestWithPhoto.getPassword());
+        PhotoError photoError = new PhotoError();
+        if (requestWithPhoto.getPhoto().getSize() > 1048576)
+            photoError.setPhoto("Фото слишком большое, нужно не более 10 Мб");
+        if ((emailError.getEmail() != null) ||
+                (nameError.getName() != null) ||
+                (passwordError.getPassword() != null) ||
+                (photoError.getPhoto() != null)) {
+            ErrorAddingPost response = new ErrorAddingPost();
+            response.setResult(false);
+            response.setErrors(new ArrayList<>());
+            if (emailError.getEmail() != null) {
+                List<AbstractError> temp = response.getErrors();
+                temp.add(emailError);
+                response.setErrors(temp);
+            }
+            if (nameError.getName() != null) {
+                List<AbstractError> temp = response.getErrors();
+                temp.add(nameError);
+                response.setErrors(temp);
+            }
+            if (passwordError.getPassword() != null) {
+                List<AbstractError> temp = response.getErrors();
+                temp.add(passwordError);
+                response.setErrors(temp);
+            }
+            if (photoError.getPhoto() != null) {
+                List<AbstractError> temp = response.getErrors();
+                temp.add(photoError);
+                response.setErrors(temp);
+            }
+            return response;
+        }
+        else {
+            user.setName(requestWithPhoto.getName());
+            user.setEmail(requestWithPhoto.getEmail());
+            if (requestWithPhoto.getPassword() != null)
+                user.setPassword(requestWithPhoto.getPassword());
+
+            String uploadsDir = "/upload/";
+            String realPathToUploads = request.getServletContext()
+                    .getRealPath(uploadsDir);
+
+            String workPiece = "abcdefghijklmnopqrstuvwxyz";
+            String[] subDirs = new String[3];
+            for (int i = 0; i < 3; i++) {
+                Random random = new Random();
+                int range = random.nextInt(25);
+                subDirs[i] = workPiece.substring(range, range + 2);
+            }
+
+            if (!new File(realPathToUploads).exists())
+                new File(realPathToUploads).mkdir();
+
+            for (String subDir : subDirs) {
+                realPathToUploads += subDir + "/";
+                if (!new File(realPathToUploads).exists())
+                    new File(realPathToUploads).mkdir();
+                uploadsDir += subDir + "/";
+            }
+            String orgName = requestWithPhoto.getPhoto().getOriginalFilename();
+            String filePath = realPathToUploads + orgName;
+
+            File dest = new File(filePath);
+            requestWithPhoto.getPhoto().transferTo(dest);
+
+            BufferedImage image = ImageIO.read(dest);
+            BufferedImage newImage = new BufferedImage(
+                    36, 36, BufferedImage.TYPE_INT_RGB);
+            int startX = 0, startY = 0, step = 0;
+            if (image.getWidth() > image.getHeight()) {
+                startX = image.getWidth() / 2 - image.getHeight() / 2;
+                step = image.getHeight() / 36;
+            }
+            else {
+                startY = image.getHeight() / 2 - image.getWidth() / 2;
+                step = image.getWidth() / 36;
+            }
+            for (int x = 0; x < 36; x++)
+                for (int y = 0; y < 36; y++) {
+                    int rgb = image.getRGB(
+                            x * step + startX, y * step + startY);
+                    newImage.setRGB(x, y, rgb);
+                }
+            File newFile = new File(
+                    "src/main/resources/static/img/user" +
+                    user.getId() + "Ava.jpg");
+            ImageIO.write(newImage, "jpg", newFile);
+
+            user.setPhoto("/img/user" + user.getId() + "Ava.jpg");
+
+            userRepository.saveAndFlush(user);
+
+            SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+            response.setResult(true);
+            return response;
+        }
+    }
+
+    private static User getUser(AuthConfiguration authConfiguration,
+                                UserRepository userRepository) {
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        int id = authConfiguration.getAuths().get(currentSession);
+        return userRepository.findById(id).get();
+    }
+
+    private static EmailError checkEmail
+            (UserRepository userRepository,
+             String requestEmail,
+             String sessionEmail) {
+        EmailError emailError = new EmailError();
+        if ((userRepository.findByEmail(requestEmail) != null)
+                && !sessionEmail.equals(requestEmail))
+            emailError.setEmail("Этот e-mail уже зарегистрирован");
+        return emailError;
+    }
+
+    private static NameError checkName(String requestName) {
+        NameError nameError = new NameError();
+        if (requestName == null)
+            nameError.setName("Имя указано неверно");
+        return nameError;
+    }
+
+    private static PasswordError checkPassword(String password) {
+        PasswordError passwordError = new PasswordError();
+        if (password.length() < 6)
+            passwordError.setPassword("Пароль короче 6-ти символов");
+        return passwordError;
     }
 }

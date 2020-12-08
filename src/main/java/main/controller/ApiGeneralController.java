@@ -1,7 +1,6 @@
 package main.controller;
 
-import main.request.CommentRequest;
-import main.request.PostModerationRequest;
+import main.request.*;
 import main.response.AbstractResponse;
 import main.response.Blog;
 import main.service.GeneralService;
@@ -44,8 +43,8 @@ public class ApiGeneralController {
      * POST запрос /api/image
      */
     @PostMapping(value = "/image", consumes = "multipart/form-data")
-    public Object imageUpload
-            (@RequestPart(value = "image") MultipartFile file)
+    public Object imageUpload(
+            @RequestPart(value = "image") MultipartFile file)
             throws IOException {
         return generalService.imageUpload(file);
     }
@@ -75,8 +74,8 @@ public class ApiGeneralController {
      * @see main.response.TagWithWeight
      */
     @GetMapping("/tag")
-    public AbstractResponse getListOfTags
-    (@RequestParam(required = false) String query) {
+    public AbstractResponse getListOfTags(
+            @RequestParam(required = false) String query) {
         return generalService.getListOfTags(query);
     }
 
@@ -88,8 +87,8 @@ public class ApiGeneralController {
      * @see main.request.PostModerationRequest
      */
     @PostMapping("/moderation")
-    public AbstractResponse postModeration
-    (@RequestBody PostModerationRequest request) {
+    public AbstractResponse postModeration(
+            @RequestBody PostModerationRequest request) {
         return generalService.postModeration(request);
     }
 
@@ -103,8 +102,37 @@ public class ApiGeneralController {
      *             за текущий год
      */
     @GetMapping("/calendar")
-    public AbstractResponse numberOfPosts
-    (@RequestParam(required = false) Integer year) {
+    public AbstractResponse numberOfPosts(
+            @RequestParam(required = false) Integer year) {
         return generalService.numberOfPosts(year);
+    }
+
+    /**
+     * Метод editProfile
+     * Метод обрабатывает информацию, введённую пользователем в форму
+     * редактирования своего профиля
+     * POST запрос /api/profile/my
+     *
+     * @see EditProfileWithPasswordRequest
+     */
+    @PostMapping(value = "/profile/my", consumes = "application/json")
+    public AbstractResponse editProfile(
+            @RequestBody EditProfileWithPasswordRequest request) {
+        return generalService.editProfile(request);
+    }
+
+    /**
+     * Метод editProfile
+     * Метод обрабатывает информацию, введённую пользователем в форму
+     * редактирования своего профиля
+     * POST запрос /api/profile/my
+     *
+     * @see EditProfileWithPhotoRequest
+     */
+    @PostMapping("/profile/my")
+    public AbstractResponse editProfile(
+            @ModelAttribute EditProfileWithPhotoRequest request)
+            throws IOException {
+        return generalService.editProfile(request);
     }
 }
