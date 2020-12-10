@@ -6,10 +6,14 @@ import main.request.EmailRequest;
 import main.request.UserRequest;
 import main.response.AbstractResponse;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 public interface AuthService {
     AbstractResponse login(AuthRequest authRequest);
     AbstractResponse check();
     AbstractResponse restore(EmailRequest emailRequest);
     AbstractResponse changePassword(ChangePasswordRequest request);
     AbstractResponse register(UserRequest request);
+    AbstractResponse captcha() throws IOException;
 }

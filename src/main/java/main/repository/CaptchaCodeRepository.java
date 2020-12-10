@@ -2,7 +2,11 @@ package main.repository;
 
 import main.model.CaptchaCode;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Интрефейс CaptchaCodeRepository. Слой для работы с БД и сущностью CaptchaCode
@@ -13,10 +17,14 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CaptchaCodeRepository extends JpaRepository<CaptchaCode, Integer> {
     /**
-     * Метод findByCode
-     * Возвращает экземпляр CaptchaCode по коду
+     * Метод deleteOldCaptchas
+     * Удаляет устаревшие капчи из таблицы
      *
-     * @param code код восстановления пароля
+     * @param time время устаревания
      */
-    CaptchaCode findByCode(String code);
+    @Modifying
+    @Transactional
+    @Query(value = "delete from captcha_codes where time < " +
+            "subdate(current_time(), interval :query hour)", nativeQuery = true)
+    void deleteOldCaptchas(@Param("query") int time);
 }

@@ -9,6 +9,9 @@ import main.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 /**
  * Класс ApiAuthController
  * REST-контроллер, обрабатывает все запросы /api/auth/*
@@ -83,5 +86,17 @@ public class ApiAuthController {
     @PostMapping("/register")
     public AbstractResponse register(@RequestBody UserRequest request) {
         return authService.register(request);
+    }
+
+    /**
+     * Метод captcha
+     * Метод генерирует коды капчи, - отображаемый и секретный, - сохраняет их в
+     * базу данных и возвращает секретный код secret и изображение размером
+     * 100х35
+     * GET запрос /api/auth/captcha
+     */
+    @GetMapping("/captcha")
+    public AbstractResponse captcha() throws IOException {
+        return authService.captcha();
     }
 }

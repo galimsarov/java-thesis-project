@@ -15,7 +15,6 @@ import main.request.EditProfileWithPhotoRequest;
 import main.request.PostModerationRequest;
 import main.response.*;
 import main.service.GeneralService;
-import org.apache.tomcat.util.http.fileupload.FileUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,8 +29,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.*;
 
 /**
