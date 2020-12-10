@@ -29,9 +29,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Base64;
-import java.util.Date;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Класс AuthServiceImpl
@@ -153,8 +151,63 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public AbstractResponse register(UserRequest request) {
-        // TODO: ну надо сделать)))
-        return null;
+        EmailError emailError = new EmailError();
+        if (userRepository.findByEmail(request.getE_mail()) != null)
+            emailError.setEmail("Этот e-mail уже зарегистрирован");
+        NameError nameError = new NameError();
+        if (request.getName() == null)
+            nameError.setName("Имя указано неверно");
+        PasswordError passwordError = new PasswordError();
+        if (request.getPassword().length() < 6)
+            passwordError.setPassword("Пароль короче 6-ти символов");
+        CaptchaError captchaError = new CaptchaError();
+        if (!request.getCaptcha_secret().equals(
+                captchaCodeRepository.findSecretByCode(request.getCaptcha())))
+            captchaError.setCaptcha("Код с картинки введён неверно");
+
+        if ((emailError.getEmail() != null) ||
+                (nameError.getName() != null) ||
+                (passwordError.getPassword() != null) ||
+                (captchaError.getCaptcha() != null)) {
+            ErrorAddingPost response = new ErrorAddingPost();
+            response.setResult(false);
+            response.setErrors(new ArrayList<>());
+            if (emailError.getEmail() != null) {
+                List<AbstractError> temp = response.getErrors();
+                temp.add(emailError);
+                response.setErrors(temp);
+            }
+            if (nameError.getName() != null) {
+                List<AbstractError> temp = response.getErrors();
+                temp.add(nameError);
+                response.setErrors(temp);
+            }
+            if (passwordError.getPassword() != null) {
+                List<AbstractError> temp = response.getErrors();
+                temp.add(passwordError);
+                response.setErrors(temp);
+            }
+            if (captchaError.getCaptcha() != null) {
+                List<AbstractError> temp = response.getErrors();
+                temp.add(captchaError);
+                response.setErrors(temp);
+            }
+            return response;
+        }
+        else {
+            User user = new User();
+            user.setEmail(request.getE_mail());
+            user.setPassword(request.getPassword());
+            user.setName(request.getName());
+            user.setRegTime(new Date());
+
+            userRepository.saveAndFlush(user);
+
+            SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+            response.setResult(true);
+
+            return response;
+        }
     }
 
     /**

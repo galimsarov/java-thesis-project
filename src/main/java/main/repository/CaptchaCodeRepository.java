@@ -27,4 +27,14 @@ public interface CaptchaCodeRepository extends JpaRepository<CaptchaCode, Intege
     @Query(value = "delete from captcha_codes where time < " +
             "subdate(current_time(), interval :query hour)", nativeQuery = true)
     void deleteOldCaptchas(@Param("query") int time);
+
+    /**
+     * Метод findSecretByCode
+     * Возвращает секретный код по коду
+     *
+     * @param code
+     */
+    @Query(value = "select secret_code from captcha_codes where code = " +
+            ":query", nativeQuery = true)
+    String findSecretByCode(@Param("query") String code);
 }
