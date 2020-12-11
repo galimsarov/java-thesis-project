@@ -7,6 +7,7 @@ import main.config.AuthConfiguration;
 import main.model.CaptchaCode;
 import main.model.User;
 import main.repository.CaptchaCodeRepository;
+import main.repository.GlobalSettingsRepository;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
 import main.request.AuthRequest;
@@ -17,6 +18,8 @@ import main.response.*;
 import main.service.AuthService;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -43,6 +46,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final CaptchaCodeRepository captchaCodeRepository;
+    private final GlobalSettingsRepository globalSettingsRepository;
     private final AuthConfiguration authConfiguration;
     private final JavaMailSender javaMailSender;
     private final HttpServletRequest request;
@@ -150,63 +154,68 @@ public class AuthServiceImpl implements AuthService {
      * @see main.request.UserRequest
      */
     @Override
-    public AbstractResponse register(UserRequest request) {
-        EmailError emailError = new EmailError();
-        if (userRepository.findByEmail(request.getE_mail()) != null)
-            emailError.setEmail("Этот e-mail уже зарегистрирован");
-        NameError nameError = new NameError();
-        if (request.getName() == null)
-            nameError.setName("Имя указано неверно");
-        PasswordError passwordError = new PasswordError();
-        if (request.getPassword().length() < 6)
-            passwordError.setPassword("Пароль короче 6-ти символов");
-        CaptchaError captchaError = new CaptchaError();
-        if (!request.getCaptcha_secret().equals(
-                captchaCodeRepository.findSecretByCode(request.getCaptcha())))
-            captchaError.setCaptcha("Код с картинки введён неверно");
-
-        if ((emailError.getEmail() != null) ||
-                (nameError.getName() != null) ||
-                (passwordError.getPassword() != null) ||
-                (captchaError.getCaptcha() != null)) {
-            ErrorAddingPost response = new ErrorAddingPost();
-            response.setResult(false);
-            response.setErrors(new ArrayList<>());
-            if (emailError.getEmail() != null) {
-                List<AbstractError> temp = response.getErrors();
-                temp.add(emailError);
-                response.setErrors(temp);
-            }
-            if (nameError.getName() != null) {
-                List<AbstractError> temp = response.getErrors();
-                temp.add(nameError);
-                response.setErrors(temp);
-            }
-            if (passwordError.getPassword() != null) {
-                List<AbstractError> temp = response.getErrors();
-                temp.add(passwordError);
-                response.setErrors(temp);
-            }
-            if (captchaError.getCaptcha() != null) {
-                List<AbstractError> temp = response.getErrors();
-                temp.add(captchaError);
-                response.setErrors(temp);
-            }
-            return response;
-        }
+    public Object register(UserRequest request) {
+        String multiUser = globalSettingsRepository.multiUser();
+        if (multiUser.equals("NO"))
+            return new ResponseEntity(HttpStatus.NOT_FOUND);
         else {
-            User user = new User();
-            user.setEmail(request.getE_mail());
-            user.setPassword(request.getPassword());
-            user.setName(request.getName());
-            user.setRegTime(new Date());
+            EmailError emailError = new EmailError();
+            if (userRepository.findByEmail(request.getE_mail()) != null)
+                emailError.setEmail("Этот e-mail уже зарегистрирован");
+            NameError nameError = new NameError();
+            if (request.getName() == null)
+                nameError.setName("Имя указано неверно");
+            PasswordError passwordError = new PasswordError();
+            if (request.getPassword().length() < 6)
+                passwordError.setPassword("Пароль короче 6-ти символов");
+            CaptchaError captchaError = new CaptchaError();
+            if (!request.getCaptcha_secret().equals(
+                    captchaCodeRepository.findSecretByCode(request.getCaptcha())))
+                captchaError.setCaptcha("Код с картинки введён неверно");
 
-            userRepository.saveAndFlush(user);
+            if ((emailError.getEmail() != null) ||
+                    (nameError.getName() != null) ||
+                    (passwordError.getPassword() != null) ||
+                    (captchaError.getCaptcha() != null)) {
+                ErrorAddingPost response = new ErrorAddingPost();
+                response.setResult(false);
+                response.setErrors(new ArrayList<>());
+                if (emailError.getEmail() != null) {
+                    List<AbstractError> temp = response.getErrors();
+                    temp.add(emailError);
+                    response.setErrors(temp);
+                }
+                if (nameError.getName() != null) {
+                    List<AbstractError> temp = response.getErrors();
+                    temp.add(nameError);
+                    response.setErrors(temp);
+                }
+                if (passwordError.getPassword() != null) {
+                    List<AbstractError> temp = response.getErrors();
+                    temp.add(passwordError);
+                    response.setErrors(temp);
+                }
+                if (captchaError.getCaptcha() != null) {
+                    List<AbstractError> temp = response.getErrors();
+                    temp.add(captchaError);
+                    response.setErrors(temp);
+                }
+                return response;
+            }
+            else {
+                User user = new User();
+                user.setEmail(request.getE_mail());
+                user.setPassword(request.getPassword());
+                user.setName(request.getName());
+                user.setRegTime(new Date());
 
-            SuccessfullyAddedPost response = new SuccessfullyAddedPost();
-            response.setResult(true);
+                userRepository.saveAndFlush(user);
 
-            return response;
+                SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+                response.setResult(true);
+
+                return response;
+            }
         }
     }
 

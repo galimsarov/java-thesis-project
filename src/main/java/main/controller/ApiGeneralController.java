@@ -3,6 +3,7 @@ package main.controller;
 import main.request.*;
 import main.response.AbstractResponse;
 import main.response.Blog;
+import main.response.SettingsResponse;
 import main.service.GeneralService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -134,5 +135,15 @@ public class ApiGeneralController {
             @ModelAttribute EditProfileWithPhotoRequest request)
             throws IOException {
         return generalService.editProfile(request);
+    }
+
+    /**
+     * Метод getSettings
+     * Метод возвращает глобальные настройки блога из таблицы global_settings
+     * GET запрос /api/settings
+     */
+    @GetMapping("/settings")
+    public SettingsResponse getSettings() {
+        return generalService.getSettings();
     }
 }

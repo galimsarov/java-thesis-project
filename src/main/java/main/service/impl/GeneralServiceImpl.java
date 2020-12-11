@@ -2,10 +2,12 @@ package main.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import main.config.AuthConfiguration;
+import main.model.GlobalSetting;
 import main.model.Post;
 import main.model.PostComment;
 import main.model.User;
 import main.model.helper.PostStatus;
+import main.repository.GlobalSettingsRepository;
 import main.repository.PostCommentRepository;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
@@ -45,6 +47,7 @@ public class GeneralServiceImpl implements GeneralService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final PostCommentRepository commentRepository;
+    private final GlobalSettingsRepository globalSettingsRepository;
     private final AuthConfiguration authConfiguration;
 
     @PersistenceContext
@@ -490,6 +493,28 @@ public class GeneralServiceImpl implements GeneralService {
             response.setResult(true);
             return response;
         }
+    }
+
+    /**
+     * Метод getSettings
+     * Метод возвращает глобальные настройки блога из таблицы global_settings
+     */
+    @Override
+    public SettingsResponse getSettings() {
+        SettingsResponse response = new SettingsResponse();
+        List <GlobalSetting> settings = globalSettingsRepository.findAll();
+        for (GlobalSetting setting : settings) {
+            if (setting.getCode().equals("MULTIUSER_MODE"))
+               response.setMultiUserMode(
+                       setting.getValue().equals("YES"));
+            if (setting.getCode().equals("POST_PREMODERATION"))
+                response.setPostPreModeration(
+                        setting.getValue().equals("YES"));
+            if (setting.getCode().equals("STATISTICS_IS_PUBLIC"))
+                response.setStatisticsIsPublic(
+                        setting.getValue().equals("YES"));
+        }
+        return response;
     }
 
     private static User getUser(AuthConfiguration authConfiguration,
