@@ -13,4 +13,12 @@ public interface GlobalSettingsRepository
     @Query(value = "select value from global_settings where code = " +
             "'MULTIUSER_MODE'", nativeQuery = true)
     String multiUser();
+
+    /**
+     * Метод statisticsIsPublic
+     * Возвращает соответствуюшее значение из таблицы global_settings
+     */
+    @Query(value = "select value from global_settings where code = " +
+            "'STATISTICS_IS_PUBLIC'", nativeQuery = true)
+    String statisticsIsPublic();
 }

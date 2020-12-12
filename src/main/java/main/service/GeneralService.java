@@ -23,4 +23,5 @@ public interface GeneralService {
             EditProfileWithPhotoRequest request) throws IOException;
     SettingsResponse getSettings();
     AbstractResponse myStatistics();
+    Object allStatistics();
 }

@@ -156,4 +156,14 @@ public class ApiGeneralController {
     public AbstractResponse myStatistics() {
         return generalService.myStatistics();
     }
+
+    /**
+     * Метод allStatistics
+     * Метод возвращает статистику  всем постам блога
+     * GET запрос /api/statistics/all
+     */
+    @GetMapping("/statistics/all")
+    public Object allStatistics() {
+        return generalService.allStatistics();
+    }
 }

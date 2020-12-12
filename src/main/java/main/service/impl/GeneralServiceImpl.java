@@ -17,6 +17,8 @@ import main.request.EditProfileWithPhotoRequest;
 import main.request.PostModerationRequest;
 import main.response.*;
 import main.service.GeneralService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.multipart.MultipartFile;
@@ -398,7 +400,7 @@ public class GeneralServiceImpl implements GeneralService {
         if (requestWithPhoto.getPassword() != null)
             passwordError = checkPassword(requestWithPhoto.getPassword());
         PhotoError photoError = new PhotoError();
-        if (requestWithPhoto.getPhoto().getSize() > 1048576)
+        if (requestWithPhoto.getPhoto().getSize() > 10485760)
             photoError.setPhoto("Фото слишком большое, нужно не более 10 Мб");
         if ((emailError.getEmail() != null) ||
                 (nameError.getName() != null) ||
@@ -526,20 +528,51 @@ public class GeneralServiceImpl implements GeneralService {
         String currentSession = RequestContextHolder
                 .currentRequestAttributes().getSessionId();
         int userId = authConfiguration.getAuths().get(currentSession);
-        int postsCount = postRepository.getPostsCountOfUser(userId);
-        int likesCount = postRepository.getLikesCountOfUsersPosts(userId);
-        int dislikesCount = postRepository.getDisLikesCountOfUsersPosts(userId);
-        int viewsCount = postRepository.getViewsCountOfUsersPosts(userId);
-        long firstPublication = postRepository.getFirstPostOfUser(userId)
-                .getTime()/1000;
-
         StatisticsResponse response = new StatisticsResponse();
-        response.setPostsCount(postsCount);
-        response.setLikesCount(likesCount);
-        response.setDislikesCount(dislikesCount);
-        response.setViewsCount(viewsCount);
-        response.setFirstPublication(firstPublication);
+        int postsCount = postRepository.getPostsCountOfUser(userId);
+        if (postsCount == 0) {
+            response.setPostsCount(0);
+            response.setLikesCount(0);
+            response.setDislikesCount(0);
+            response.setViewsCount(0);
+            response.setFirstPublication(0);
+        }
+        else {
+            response.setPostsCount(postsCount);
+            response.setLikesCount(postRepository
+                    .getLikesCountOfUsersPosts(userId));
+            response.setDislikesCount(postRepository
+                    .getDisLikesCountOfUsersPosts(userId));
+            response.setViewsCount(postRepository
+                    .getViewsCountOfUsersPosts(userId));
+            response.setFirstPublication(postRepository
+                    .getFirstPostOfUser(userId).getTime()/1000);
+        }
         return response;
+    }
+
+    /**
+     * Метод allStatistics
+     * Метод возвращает статистику  всем постам блога
+     */
+    @Override
+    public Object allStatistics() {
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        int userId = authConfiguration.getAuths().get(currentSession);
+        if ((userRepository.isAdmin(userId) == 0) &&
+                (globalSettingsRepository.statisticsIsPublic().equals("NO")))
+            return new ResponseEntity(HttpStatus.FORBIDDEN);
+        else {
+            StatisticsResponse response = new StatisticsResponse();
+            response.setPostsCount(postRepository.getPostsCount());
+            response.setLikesCount(postRepository.getLikesCount());
+            response.setDislikesCount(postRepository.getDisLikesCount());
+            response.setViewsCount(postRepository.getViewsCount());
+            response.setFirstPublication(postRepository.getFirstPost()
+                    .getTime()/1000);
+            return response;
+        }
     }
 
     private static User getUser(AuthConfiguration authConfiguration,

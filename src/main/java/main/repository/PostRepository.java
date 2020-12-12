@@ -439,7 +439,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
     /**
      * Метод getFirstPostOfUser
-     * Метод выводит ту первого поста, у которого user является автором,
+     * Метод выводит дату первого поста, у которого user является автором,
      * доступного для чтения
      *
      * @param userId
@@ -448,4 +448,51 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "is_active = 1 and moderation_status = 'ACCEPTED' and time < " +
             "current_time()",nativeQuery = true)
     Date getFirstPostOfUser(@Param("query") int userId);
+
+    /**
+     * Метод getPostsCount
+     * Метод выводит количество постов, доступных для чтения
+     */
+    @Query(value = "select count(*) from posts where is_active = 1 and " +
+            "moderation_status = 'ACCEPTED' and time < current_time()",
+            nativeQuery = true)
+    int getPostsCount();
+
+    /**
+     * Метод getLikesCount
+     * Метод выводит количество лайков постов, доступных для чтения
+     */
+    @Query(value = "select count(*) from posts join (select value, post_id " +
+            "from post_votes) as temp_votes on posts.id = temp_votes.post_id " +
+            "where is_active = 1 and moderation_status = 'ACCEPTED' and time " +
+            "< current_time() and value = 1", nativeQuery = true)
+    int getLikesCount();
+
+    /**
+     * Метод getDisLikesCount
+     * Метод выводит количество дизлайков постов, доступных для чтения
+     */
+    @Query(value = "select count(*) from posts join (select value, post_id " +
+            "from post_votes) as temp_votes on posts.id = temp_votes.post_id " +
+            "where is_active = 1 and moderation_status = 'ACCEPTED' and time " +
+            "< current_time() and value = -1", nativeQuery = true)
+    int getDisLikesCount();
+
+    /**
+     * Метод getViewsCount
+     * Метод выводит количество просмотров постов, доступных для чтения
+     */
+    @Query(value = "select sum(view_count) from posts where is_active = 1 " +
+            "and moderation_status = 'ACCEPTED' and time < current_time()",
+            nativeQuery = true)
+    int getViewsCount();
+
+    /**
+     * Метод getFirstPost
+     * Метод выводит дату первого поста, доступного для чтения
+     */
+    @Query(value = "select min(time) from posts where is_active = 1 and " +
+            "moderation_status = 'ACCEPTED' and time < current_time()",
+            nativeQuery = true)
+    Date getFirstPost();
 }
