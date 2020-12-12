@@ -146,4 +146,14 @@ public class ApiGeneralController {
     public SettingsResponse getSettings() {
         return generalService.getSettings();
     }
+
+    /**
+     * Метод myStatistics
+     * Метод возвращает статистику постов текущего авторизованного пользователя
+     * GET запрос /api/statistics/my
+     */
+    @GetMapping("/statistics/my")
+    public AbstractResponse myStatistics() {
+        return generalService.myStatistics();
+    }
 }

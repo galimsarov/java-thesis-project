@@ -7,12 +7,9 @@ import main.request.UserRequest;
 import main.response.AbstractResponse;
 import main.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Objects;
 
 /**
  * Класс ApiAuthController

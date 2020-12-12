@@ -143,8 +143,40 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public AbstractResponse changePassword(ChangePasswordRequest request) {
-        // TODO: ну надо сделать)))
-        return null;
+        User user = userRepository.findByCode(request.getCode());
+        ErrorAddingPost errorResponse = new ErrorAddingPost();
+        errorResponse.setResult(false);
+        ArrayList<AbstractError> errors = new ArrayList<>();
+        if (user != null) {
+            String secretCode = captchaCodeRepository.findSecretByCode(
+                    request.getCaptcha());
+            if (secretCode.equals(request.getCaptcha_secret()))
+                if (request.getPassword().length() >= 6) {
+                    user.setPassword(request.getPassword());
+                    userRepository.saveAndFlush(user);
+                    SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+                    response.setResult(true);
+                    return response;
+                }
+                else {
+                    PasswordError passwordError = new PasswordError();
+                    passwordError.setPassword("Пароль короче 6-ти символов");
+                    errors.add(passwordError);
+                }
+            else {
+                CaptchaError captchaError = new CaptchaError();
+                captchaError.setCaptcha("Код с картинки введён неверно");
+                errors.add(captchaError);
+            }
+        }
+        else {
+            CodeError codeError = new CodeError();
+            codeError.setCode("Ссылка для восстановления пароля устарела. " +
+                    "<a href=\\\"/auth/restore\\\">Запросить ссылку снова</a>");
+            errors.add(codeError);
+        }
+        errorResponse.setErrors(errors);
+        return errorResponse;
     }
 
     /**

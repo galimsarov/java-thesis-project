@@ -517,6 +517,31 @@ public class GeneralServiceImpl implements GeneralService {
         return response;
     }
 
+    /**
+     * Метод myStatistics
+     * Метод возвращает статистику постов текущего авторизованного пользователя
+     */
+    @Override
+    public AbstractResponse myStatistics() {
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        int userId = authConfiguration.getAuths().get(currentSession);
+        int postsCount = postRepository.getPostsCountOfUser(userId);
+        int likesCount = postRepository.getLikesCountOfUsersPosts(userId);
+        int dislikesCount = postRepository.getDisLikesCountOfUsersPosts(userId);
+        int viewsCount = postRepository.getViewsCountOfUsersPosts(userId);
+        long firstPublication = postRepository.getFirstPostOfUser(userId)
+                .getTime()/1000;
+
+        StatisticsResponse response = new StatisticsResponse();
+        response.setPostsCount(postsCount);
+        response.setLikesCount(likesCount);
+        response.setDislikesCount(dislikesCount);
+        response.setViewsCount(viewsCount);
+        response.setFirstPublication(firstPublication);
+        return response;
+    }
+
     private static User getUser(AuthConfiguration authConfiguration,
                                 UserRepository userRepository) {
         String currentSession = RequestContextHolder

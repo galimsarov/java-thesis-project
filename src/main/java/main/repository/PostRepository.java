@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -383,4 +384,68 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "moderation_status = 'NEW' and moderator_id = :query or " +
             "moderator_id = 0) as new_posts", nativeQuery = true)
     int getCountOfPostsForModeration(@Param("query") int moderatorId);
+
+    /**
+     * Метод getPostsCountOfUser
+     * Метод выводит количество постов, у которых user
+     * является автором, доступных для чтения
+     *
+     * @param userId
+     */
+    @Query(value = "select count(*) from posts where user_id = :query and " +
+            "is_active = 1 and moderation_status = 'ACCEPTED' and time " +
+            "< current_time()", nativeQuery = true)
+    int getPostsCountOfUser(@Param("query") int userId);
+
+    /**
+     * Метод getLikesCountOfUsersPosts
+     * Метод выводит количество лайков постов для всех публикаций, у которых user
+     * является автором, доступных для чтения
+     *
+     * @param userId
+     */
+    @Query(value = "select count(*) from posts join (select value, post_id " +
+            "from post_votes) as temp_votes on posts.id = temp_votes.post_id " +
+            "where user_id = :query and is_active = 1 and moderation_status " +
+            "= 'ACCEPTED' and time < current_time() and value = 1",
+            nativeQuery = true)
+    int getLikesCountOfUsersPosts(@Param("query") int userId);
+
+    /**
+     * Метод getDisLikesCountOfUsersPosts
+     * Метод выводит количество дизлайков постов для всех публикаций, у которых
+     * user является автором, доступных для чтения
+     *
+     * @param userId
+     */
+    @Query(value = "select count(*) from posts join (select value, post_id " +
+            "from post_votes) as temp_votes on posts.id = temp_votes.post_id " +
+            "where user_id = :query and is_active = 1 and moderation_status " +
+            "= 'ACCEPTED' and time < current_time() and value = -1",
+            nativeQuery = true)
+    int getDisLikesCountOfUsersPosts(@Param("query") int userId);
+
+    /**
+     * Метод getViewsCountOfUsersPosts
+     * Метод выводит количество просмотров постов для всех публикаций, у которых
+     * user является автором, доступных для чтения
+     *
+     * @param userId
+     */
+    @Query(value = "select sum(view_count) from posts where user_id = :query " +
+            "and is_active = 1 and moderation_status = 'ACCEPTED' and time < " +
+            "current_time()", nativeQuery = true)
+    int getViewsCountOfUsersPosts(@Param("query") int userId);
+
+    /**
+     * Метод getFirstPostOfUser
+     * Метод выводит ту первого поста, у которого user является автором,
+     * доступного для чтения
+     *
+     * @param userId
+     */
+    @Query(value = "select min(time) from posts where user_id = :query and " +
+            "is_active = 1 and moderation_status = 'ACCEPTED' and time < " +
+            "current_time()",nativeQuery = true)
+    Date getFirstPostOfUser(@Param("query") int userId);
 }
