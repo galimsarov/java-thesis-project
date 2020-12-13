@@ -4,13 +4,16 @@ import lombok.RequiredArgsConstructor;
 import main.config.AuthConfiguration;
 import main.mapper.PostResponseMapper;
 import main.model.Post;
+import main.model.PostVote;
 import main.model.Tag;
 import main.model.User;
 import main.model.helper.PostStatus;
 import main.repository.PostRepository;
+import main.repository.PostVoteRepository;
 import main.repository.TagRepository;
 import main.repository.UserRepository;
 import main.request.PostRequest;
+import main.request.PostVoteRequest;
 import main.response.*;
 import main.service.PostService;
 import org.mapstruct.factory.Mappers;
@@ -34,6 +37,7 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
+    private final PostVoteRepository postVoteRepository;
     private final AuthConfiguration authConfiguration;
 
     /**
@@ -356,6 +360,82 @@ public class PostServiceImpl implements PostService {
         SuccessfullyAddedPost addedPost = new SuccessfullyAddedPost();
         addedPost.setResult(true);
         return addedPost;
+    }
+
+    /**
+     * Метод like
+     * Метод сохраняет в таблицу post_votes лайк текущего авторизованного
+     * пользователя
+     *
+     * @see main.request.PostVoteRequest
+     */
+    @Override
+    public AbstractResponse like(PostVoteRequest request) {
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        int userId = authConfiguration.getAuths().get(currentSession);
+        SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+
+        PostVote postVote = postVoteRepository
+                .getPostVoteByPostAndUser(request.getPostId(), userId);
+        if (postVote == null) {
+            PostVote newPostVote = new PostVote();
+            newPostVote.setPost(postRepository.getPost(request.getPostId()));
+            newPostVote.setTime(new Date());
+            newPostVote.setUser(userRepository.getOne(userId));
+            newPostVote.setValue(1);
+            postVoteRepository.saveAndFlush(newPostVote);
+            response.setResult(true);
+        }
+        else {
+            if (postVote.getValue() == 1)
+                response.setResult(false);
+            else {
+                postVote.setValue(1);
+                postVote.setTime(new Date());
+                postVoteRepository.saveAndFlush(postVote);
+                response.setResult(true);
+            }
+        }
+        return response;
+    }
+
+    /**
+     * Метод dislike
+     * Метод сохраняет в таблицу post_votes дизлайк текущего авторизованного
+     * пользователя
+     *
+     * @see main.request.PostVoteRequest
+     */
+    @Override
+    public AbstractResponse dislike(PostVoteRequest request) {
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        int userId = authConfiguration.getAuths().get(currentSession);
+        SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+
+        PostVote postVote = postVoteRepository
+                .getPostVoteByPostAndUser(request.getPostId(), userId);
+        if (postVote == null) {
+            PostVote newPostVote = new PostVote();
+            newPostVote.setPost(postRepository.getPost(request.getPostId()));
+            newPostVote.setTime(new Date());
+            newPostVote.setUser(userRepository.getOne(userId));
+            newPostVote.setValue(-1);
+            postVoteRepository.saveAndFlush(newPostVote);
+            response.setResult(true);
+        }
+        else {
+            if (postVote.getValue() == -1)
+                response.setResult(false);
+            else {
+                postVote.setValue(-1);
+                postVote.setTime(new Date());
+                postVoteRepository.saveAndFlush(postVote);
+                response.setResult(true);
+            }
+        }
+        return response;
     }
 
     private String dateBefore(String date) {

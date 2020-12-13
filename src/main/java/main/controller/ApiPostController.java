@@ -1,6 +1,7 @@
 package main.controller;
 
 import main.request.PostRequest;
+import main.request.PostVoteRequest;
 import main.response.AbstractResponse;
 import main.response.ListOfPostsResponse;
 import main.response.SpecificPostResponse;
@@ -174,5 +175,31 @@ public class ApiPostController {
     public AbstractResponse editPost(@PathVariable(value = "id") int id,
                                      @RequestBody PostRequest postRequest) {
         return postService.editPost(id, postRequest);
+    }
+
+    /**
+     * Метод like
+     * Метод сохраняет в таблицу post_votes лайк текущего авторизованного
+     * пользователя
+     * POST запрос /api/post/like
+     *
+     * @see main.request.PostVoteRequest
+     */
+    @PostMapping("/like")
+    public AbstractResponse like(@RequestBody PostVoteRequest request) {
+        return postService.like(request);
+    }
+
+    /**
+     * Метод dislike
+     * Метод сохраняет в таблицу post_votes дизлайк текущего авторизованного
+     * пользователя
+     * POST запрос /api/post/dislike
+     *
+     * @see main.request.PostVoteRequest
+     */
+    @PostMapping("/dislike")
+    public AbstractResponse dislike(@RequestBody PostVoteRequest request) {
+        return postService.dislike(request);
     }
 }
