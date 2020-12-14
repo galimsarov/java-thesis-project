@@ -25,4 +25,8 @@ public class AuthConfiguration {
     public Map<String, Integer> getAuths() {
         return authorizations;
     }
+
+    public void deleteAuth(String key) {
+        authorizations.remove(key);
+    }
 }

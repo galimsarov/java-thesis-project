@@ -21,4 +21,12 @@ public interface GlobalSettingsRepository
     @Query(value = "select value from global_settings where code = " +
             "'STATISTICS_IS_PUBLIC'", nativeQuery = true)
     String statisticsIsPublic();
+
+    /**
+     * Метод postPremoderation
+     * Возвращает соответствуюшее значение из таблицы global_settings
+     */
+    @Query(value = "select value from global_settings where code = " +
+            "'POST_PREMODERATION'", nativeQuery = true)
+    String postPremoderation();
 }

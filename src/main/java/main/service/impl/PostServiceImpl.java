@@ -8,10 +8,7 @@ import main.model.PostVote;
 import main.model.Tag;
 import main.model.User;
 import main.model.helper.PostStatus;
-import main.repository.PostRepository;
-import main.repository.PostVoteRepository;
-import main.repository.TagRepository;
-import main.repository.UserRepository;
+import main.repository.*;
 import main.request.PostRequest;
 import main.request.PostVoteRequest;
 import main.response.*;
@@ -38,6 +35,7 @@ public class PostServiceImpl implements PostService {
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
     private final PostVoteRepository postVoteRepository;
+    private final GlobalSettingsRepository globalSettingsRepository;
     private final AuthConfiguration authConfiguration;
 
     /**
@@ -305,7 +303,13 @@ public class PostServiceImpl implements PostService {
 
         Post post = new Post();
         createNewPost(postRequest, userRepository.getOne(id), post);
-        post.setModerationStatus(PostStatus.NEW);
+
+        if (globalSettingsRepository.postPremoderation().equals("YES"))
+            post.setModerationStatus(PostStatus.NEW);
+        else {
+            post.setModerationStatus(PostStatus.ACCEPTED);
+            post.setActive(true);
+        }
 
         postRepository.saveAndFlush(post);
 

@@ -98,4 +98,15 @@ public class ApiAuthController {
     public AbstractResponse captcha() throws IOException {
         return authService.captcha();
     }
+
+    /**
+     * Метод logout
+     * Метод разлогинивает пользователя: удаляет идентификатор его сессии из
+     * списка авторизованных
+     * GET запрос /api/auth/logout
+     */
+    @GetMapping("/logout")
+    public AbstractResponse logout() {
+        return authService.logout();
+    }
 }

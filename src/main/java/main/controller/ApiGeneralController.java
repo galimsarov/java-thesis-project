@@ -138,16 +138,6 @@ public class ApiGeneralController {
     }
 
     /**
-     * Метод getSettings
-     * Метод возвращает глобальные настройки блога из таблицы global_settings
-     * GET запрос /api/settings
-     */
-    @GetMapping("/settings")
-    public SettingsResponse getSettings() {
-        return generalService.getSettings();
-    }
-
-    /**
      * Метод myStatistics
      * Метод возвращает статистику постов текущего авторизованного пользователя
      * GET запрос /api/statistics/my
@@ -165,5 +155,26 @@ public class ApiGeneralController {
     @GetMapping("/statistics/all")
     public Object allStatistics() {
         return generalService.allStatistics();
+    }
+
+    /**
+     * Метод getSettings
+     * Метод возвращает глобальные настройки блога из таблицы global_settings
+     * GET запрос /api/settings
+     */
+    @GetMapping("/settings")
+    public SettingsResponse getSettings() {
+        return generalService.getSettings();
+    }
+
+    /**
+     * Метод putSettings
+     * Метод записывает глобальные настройки блога в таблицу global_settings,
+     * если запрашивающий пользователь авторизован и является модератором
+     * PUT запрос /api/settings
+     */
+    @PutMapping("/settings")
+    public void putSettings(@RequestBody SettingsResponse request) {
+        generalService.putSettings(request);
     }
 }

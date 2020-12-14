@@ -498,28 +498,6 @@ public class GeneralServiceImpl implements GeneralService {
     }
 
     /**
-     * Метод getSettings
-     * Метод возвращает глобальные настройки блога из таблицы global_settings
-     */
-    @Override
-    public SettingsResponse getSettings() {
-        SettingsResponse response = new SettingsResponse();
-        List <GlobalSetting> settings = globalSettingsRepository.findAll();
-        for (GlobalSetting setting : settings) {
-            if (setting.getCode().equals("MULTIUSER_MODE"))
-               response.setMultiUserMode(
-                       setting.getValue().equals("YES"));
-            if (setting.getCode().equals("POST_PREMODERATION"))
-                response.setPostPreModeration(
-                        setting.getValue().equals("YES"));
-            if (setting.getCode().equals("STATISTICS_IS_PUBLIC"))
-                response.setStatisticsIsPublic(
-                        setting.getValue().equals("YES"));
-        }
-        return response;
-    }
-
-    /**
      * Метод myStatistics
      * Метод возвращает статистику постов текущего авторизованного пользователя
      */
@@ -572,6 +550,61 @@ public class GeneralServiceImpl implements GeneralService {
             response.setFirstPublication(postRepository.getFirstPost()
                     .getTime()/1000);
             return response;
+        }
+    }
+
+    /**
+     * Метод getSettings
+     * Метод возвращает глобальные настройки блога из таблицы global_settings
+     */
+    @Override
+    public SettingsResponse getSettings() {
+        SettingsResponse response = new SettingsResponse();
+        List <GlobalSetting> settings = globalSettingsRepository.findAll();
+        for (GlobalSetting setting : settings) {
+            if (setting.getCode().equals("MULTIUSER_MODE"))
+                response.setMultiUserMode(
+                        setting.getValue().equals("YES"));
+            if (setting.getCode().equals("POST_PREMODERATION"))
+                response.setPostPreModeration(
+                        setting.getValue().equals("YES"));
+            if (setting.getCode().equals("STATISTICS_IS_PUBLIC"))
+                response.setStatisticsIsPublic(
+                        setting.getValue().equals("YES"));
+        }
+        return response;
+    }
+
+    /**
+     * Метод putSettings
+     * Метод записывает глобальные настройки блога в таблицу global_settings,
+     * если запрашивающий пользователь авторизован и является модератором
+     */
+    @Override
+    public void putSettings(SettingsResponse request) {
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        int userId = authConfiguration.getAuths().get(currentSession);
+        if (userRepository.isAdmin(userId) == 1) {
+            List<GlobalSetting> settings = globalSettingsRepository.findAll();
+            for (GlobalSetting globalSetting : settings) {
+                if (globalSetting.getCode().equals("MULTIUSER_MODE"))
+                    if (request.isMultiUserMode())
+                        globalSetting.setValue("YES");
+                    else
+                        globalSetting.setValue("NO");
+                if (globalSetting.getCode().equals("POST_PREMODERATION"))
+                    if (request.isPostPreModeration())
+                        globalSetting.setValue("YES");
+                    else
+                        globalSetting.setValue("NO");
+                if (globalSetting.getCode().equals("STATISTICS_IS_PUBLIC"))
+                    if (request.isStatisticsIsPublic())
+                        globalSetting.setValue("YES");
+                    else
+                        globalSetting.setValue("NO");
+            }
+            globalSettingsRepository.saveAll(settings);
         }
     }
 

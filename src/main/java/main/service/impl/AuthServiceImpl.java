@@ -301,6 +301,21 @@ public class AuthServiceImpl implements AuthService {
         return response;
     }
 
+    /**
+     * Метод logout
+     * Метод разлогинивает пользователя: удаляет идентификатор его сессии из
+     * списка авторизованных
+     */
+    @Override
+    public AbstractResponse logout() {
+        String currentSession = RequestContextHolder
+                .currentRequestAttributes().getSessionId();
+        authConfiguration.deleteAuth(currentSession);
+        SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+        response.setResult(true);
+        return response;
+    }
+
     private SuccessfullyLogin getAuthUserResponse(User user) {
         UserAuthResponse userResponse = new UserAuthResponse();
         userResponse.setId(user.getId());

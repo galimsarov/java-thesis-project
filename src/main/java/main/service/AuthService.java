@@ -15,4 +15,5 @@ public interface AuthService {
     AbstractResponse changePassword(ChangePasswordRequest request);
     Object register(UserRequest request);
     AbstractResponse captcha() throws IOException;
+    AbstractResponse logout();
 }

@@ -21,7 +21,8 @@ public interface GeneralService {
     AbstractResponse editProfile(EditProfileWithPasswordRequest request);
     AbstractResponse editProfile(
             EditProfileWithPhotoRequest request) throws IOException;
-    SettingsResponse getSettings();
     AbstractResponse myStatistics();
     Object allStatistics();
+    SettingsResponse getSettings();
+    void putSettings(SettingsResponse request);
 }
