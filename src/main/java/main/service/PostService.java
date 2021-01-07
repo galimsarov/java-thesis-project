@@ -11,7 +11,7 @@ public interface PostService {
     BasicResponse getPostsByTag(int offset, int limit, String tag);
     BasicResponse getPostsForModeration(int offset, int limit, String status);
     BasicResponse getMyPosts(int offset, int limit, String status);
-    BasicResponse getPost(int id);
+    Object getPost(int id);
     BasicResponse addPost(BasicRequest request);
     BasicResponse editPost(int id, BasicRequest request);
     BasicResponse like(AdditionalRequest request);

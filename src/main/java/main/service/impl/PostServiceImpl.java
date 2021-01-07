@@ -17,9 +17,12 @@ import org.mapstruct.factory.Mappers;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.*;
 
 /**
@@ -260,13 +263,19 @@ public class PostServiceImpl implements PostService {
      * @param id пост, который мы хотим ищем
      */
     @Override
-    public BasicResponse getPost
+    public Object getPost
     (int id) {
-        PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
-        Post post = postRepository.getOne(id);
-        post.setViewCount(checkViewCount(post));
-        postRepository.saveAndFlush(post);
-        return mapper.postToSpecificPost(post);
+        try {
+            Post post = postRepository.getOne(id);
+            PostResponseMapper mapper = Mappers
+                    .getMapper(PostResponseMapper.class);
+            post.setViewCount(checkViewCount(post));
+            postRepository.saveAndFlush(post);
+            return mapper.postToSpecificPost(post);
+        }
+        catch (EntityNotFoundException e) {
+            return new ResponseEntity(HttpStatus.NOT_FOUND);
+        }
     }
 
     /**

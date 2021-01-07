@@ -74,8 +74,6 @@ public class ApiGeneralController {
      * Метод фиксирует действие модератора по посту: его утверждение или
      * отклонение
      * POST запрос /api/moderation
-     *
-     * @see main.request.PostModerationRequest
      */
     @PostMapping("/moderation")
     public BasicResponse postModeration(

@@ -131,7 +131,7 @@ public class ApiPostController {
      * @param id поста, который мы хотим найти
      */
     @GetMapping("/{id}")
-    public BasicResponse getPost(
+    public Object getPost(
             @PathVariable(value = "id") int id) {
         return postService.getPost(id);
     }
