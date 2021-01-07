@@ -9,8 +9,8 @@ import main.model.Tag;
 import main.model.User;
 import main.model.helper.PostStatus;
 import main.repository.*;
-import main.request.PostRequest;
-import main.request.PostVoteRequest;
+import main.request.AdditionalRequest;
+import main.request.BasicRequest;
 import main.response.*;
 import main.service.PostService;
 import org.mapstruct.factory.Mappers;
@@ -26,7 +26,7 @@ import java.util.*;
  * Класс PostServiceImpl
  * Сервисный слой для работы с постами
  *
- * @version 1.0
+ * @version 1.1
  */
 @Service
 @RequiredArgsConstructor
@@ -45,12 +45,11 @@ public class PostServiceImpl implements PostService {
      * @param offset сдвиг от 0 для постраничного вывода
      * @param limit количество постов, которое надо вывести
      * @param mode режим вывода (сортировка): recent, popular, best или early
-     * @see ListOfPostsResponse
      */
     @Override
-    public ListOfPostsResponse getListOfPostResponse
-                (int offset, int limit, String mode) {
-        List<PostResponse> postDTOList = new ArrayList<>();
+    public BasicResponse getListOfPostResponse
+    (int offset, int limit, String mode) {
+        List<BasicResponse> posts = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
         Pageable pageable = PageRequest.of(offset/10, limit);
         Page<Post> postPage;
@@ -72,14 +71,14 @@ public class PostServiceImpl implements PostService {
                         findRecentPosts(pageable);
         }
         for (Post post : postPage) {
-            PostResponse postDTO = mapper.postToPostDTO(post);
-            postDTOList.add(postDTO);
+            BasicResponse postForFeed = mapper.postToBasicResponse(post);
+            posts.add(postForFeed);
         }
-        ListOfPostsResponse answer = new ListOfPostsResponse();
-        answer.setCount(postRepository.findCountOfPosts());
-        answer.setPosts(postDTOList);
-        return answer;
-    }
+        BasicResponse response = new BasicResponse();
+        response.setCount(postRepository.findCountOfPosts());
+        response.setPosts(posts);
+        return response;
+        }
 
     /**
      * Метод searchForPostResponse
@@ -88,25 +87,24 @@ public class PostServiceImpl implements PostService {
      * @param offset сдвиг от 0 для постраничного вывода
      * @param limit количество постов, которое надо вывести
      * @param query поисковый запрос
-     * @see ListOfPostsResponse
      */
     @Override
-    public ListOfPostsResponse searchForPostResponse
-            (int offset, int limit, String query) {
-        List<PostResponse> postDTOList = new ArrayList<>();
+    public BasicResponse searchForPostResponse
+    (int offset, int limit, String query) {
+        BasicResponse response = new BasicResponse();
+        List<BasicResponse> posts = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper
                 (PostResponseMapper.class);
         Pageable pageable = PageRequest.of(offset/10, limit);
         List<Post> postList = postRepository.
                 searchForPostsByQuery(query, pageable);
         for (Post post : postList) {
-            PostResponse postDTO = mapper.postToPostDTO(post);
-            postDTOList.add(postDTO);
+            BasicResponse postDTO = mapper.postToBasicResponse(post);
+            posts.add(postDTO);
         }
-        ListOfPostsResponse answer = new ListOfPostsResponse();
-        answer.setCount(postRepository.getCountOfPostsByQuery(query));
-        answer.setPosts(postDTOList);
-        return answer;
+        response.setCount(postRepository.getCountOfPostsByQuery(query));
+        response.setPosts(posts);
+        return response;
     }
 
     /**
@@ -116,25 +114,24 @@ public class PostServiceImpl implements PostService {
      * @param offset сдвиг от 0 для постраничного вывода
      * @param limit количество постов, которое надо вывести
      * @param date дата в формате "2019-10-15"
-     * @see ListOfPostsResponse
      */
     @Override
-    public ListOfPostsResponse getPostsByDate
-            (int offset, int limit, String date) {
-        List<PostResponse> postDTOList = new ArrayList<>();
+    public BasicResponse getPostsByDate
+    (int offset, int limit, String date) {
+        BasicResponse response = new BasicResponse();
+        List<BasicResponse> posts = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
         Pageable pageable = PageRequest.of(offset/10, limit);
         List<Post> postList = postRepository.
                 getPostsByDate(dateBefore(date), dateAfter(date), pageable);
         for (Post post : postList) {
-            PostResponse postDTO = mapper.postToPostDTO(post);
-            postDTOList.add(postDTO);
+            BasicResponse postDTO = mapper.postToBasicResponse(post);
+            posts.add(postDTO);
         }
-        ListOfPostsResponse answer = new ListOfPostsResponse();
-        answer.setCount(postRepository
+        response.setCount(postRepository
                 .getCountOfPostsByDate(dateBefore(date), dateAfter(date)));
-        answer.setPosts(postDTOList);
-        return answer;
+        response.setPosts(posts);
+        return response;
     }
 
     /**
@@ -144,24 +141,22 @@ public class PostServiceImpl implements PostService {
      * @param offset сдвиг от 0 для постраничного вывода
      * @param limit количество постов, которое надо вывести
      * @param tag тэг, по которому нужно вывести все посты
-     * @see ListOfPostsResponse
      */
     @Override
-    public ListOfPostsResponse getPostsByTag
-            (int offset, int limit, String tag) {
-        List<PostResponse> postDTOList = new ArrayList<>();
+    public BasicResponse getPostsByTag
+    (int offset, int limit, String tag) {
+        BasicResponse response = new BasicResponse();
+        List<BasicResponse> posts = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
         Pageable pageable = PageRequest.of(offset/10, limit);
-        List<Post> postList = postRepository.
-                getPostsByTag(tag, pageable);
+        List<Post> postList = postRepository.getPostsByTag(tag, pageable);
         for (Post post : postList) {
-            PostResponse postDTO = mapper.postToPostDTO(post);
-            postDTOList.add(postDTO);
+            BasicResponse postDTO = mapper.postToBasicResponse(post);
+            posts.add(postDTO);
         }
-        ListOfPostsResponse answer = new ListOfPostsResponse();
-        answer.setCount(postRepository.getCountOfPostsByTag(tag));
-        answer.setPosts(postDTOList);
-        return answer;
+        response.setCount(postRepository.getCountOfPostsByTag(tag));
+        response.setPosts(posts);
+        return response;
     }
 
     /**
@@ -171,12 +166,12 @@ public class PostServiceImpl implements PostService {
      * @param offset сдвиг от 0 для постраничного вывода
      * @param limit количество постов, которое надо вывести
      * @param status статус модерации: new, declined или accepted
-     * @see ListOfPostsResponse
      */
     @Override
-    public ListOfPostsResponse getPostsForModeration
-            (int offset, int limit, String status) {
-        List<PostResponse> postResponseList = new ArrayList<>();
+    public BasicResponse getPostsForModeration
+    (int offset, int limit, String status) {
+        BasicResponse response = new BasicResponse();
+        List<BasicResponse> posts = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
         Pageable pageable = PageRequest.of(offset/10, limit);
         List<Post> postList;
@@ -200,13 +195,12 @@ public class PostServiceImpl implements PostService {
                 count = postRepository.getCountOfAcceptedPosts(id);
         }
         for (Post post : postList) {
-            PostResponse postResponse = mapper.postToPostDTO(post);
-            postResponseList.add(postResponse);
+            BasicResponse postResponse = mapper.postToBasicResponse(post);
+            posts.add(postResponse);
         }
-        ListOfPostsResponse answer = new ListOfPostsResponse();
-        answer.setCount(count);
-        answer.setPosts(postResponseList);
-        return answer;
+        response.setCount(count);
+        response.setPosts(posts);
+        return response;
     }
 
     /**
@@ -215,13 +209,14 @@ public class PostServiceImpl implements PostService {
      *
      * @param offset сдвиг от 0 для постраничного вывода
      * @param limit количество постов, которое надо вывести
-     * @param status статус модерации: inactive, pending, declined или published
-     * @see ListOfPostsResponse
+     * @param status статус модерации: inactive, pending, declined или
+     *               published
      */
     @Override
-    public ListOfPostsResponse getMyPosts
-            (int offset, int limit, String status) {
-        List<PostResponse> postResponseList = new ArrayList<>();
+    public BasicResponse getMyPosts
+    (int offset, int limit, String status) {
+        BasicResponse response = new BasicResponse();
+        List<BasicResponse> posts = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper
                 (PostResponseMapper.class);
         Pageable pageable = PageRequest.of(offset/10, limit);
@@ -250,13 +245,12 @@ public class PostServiceImpl implements PostService {
                 count = postRepository.getCountOfMyPublishedPosts(id);
         }
         for (Post post : postList) {
-            PostResponse postResponse = mapper.postToPostDTO(post);
-            postResponseList.add(postResponse);
+            BasicResponse postResponse = mapper.postToBasicResponse(post);
+            posts.add(postResponse);
         }
-        ListOfPostsResponse answer = new ListOfPostsResponse();
-        answer.setCount(count);
-        answer.setPosts(postResponseList);
-        return answer;
+        response.setCount(count);
+        response.setPosts(posts);
+        return response;
     }
 
     /**
@@ -264,58 +258,43 @@ public class PostServiceImpl implements PostService {
      * Метод выводит данные конкретного поста для отображения на странице поста
      *
      * @param id пост, который мы хотим ищем
-     * @see SpecificPostResponse
      */
     @Override
-    public SpecificPostResponse getPost(int id) {
-        PostResponseMapper mapper = Mappers.getMapper
-                (PostResponseMapper.class);
-        Post post = postRepository.getPost(id);
-        if (post == null)
-            return null;
-        else {
-            post.setViewCount(checkViewCount(post));
-            postRepository.saveAndFlush(post);
-            return mapper.postToSpecificPost(post);
-        }
+    public BasicResponse getPost
+    (int id) {
+        PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
+        Post post = postRepository.getOne(id);
+        post.setViewCount(checkViewCount(post));
+        postRepository.saveAndFlush(post);
+        return mapper.postToSpecificPost(post);
     }
 
     /**
      * Метод addPost
      * Метод отправляет данные поста, которые пользователь ввёл в форму
-     *
-     * @see PostRequest
      */
     @Override
-    public AbstractResponse addPost(PostRequest postRequest) {
-        ErrorAddingPost errorResponse = checkPostData(postRequest);
-        if (!errorResponse.isResult())
-            return errorResponse;
-
-        if (postRequest.getTimestamp() < (new Date()).getTime()) {
-            long newTimeStamp = (new Date()).getTime();
-            postRequest.setTimestamp(newTimeStamp);
-        }
-
+    public BasicResponse addPost
+    (BasicRequest request) {
+        BasicResponse response = checkPostData(request);
+        if (!response.isResult())
+            return response;
+        if (request.getTimestamp() < (new Date()).getTime())
+            request.setTimestamp((new Date()).getTime());
         String currentSession = RequestContextHolder
                 .currentRequestAttributes().getSessionId();
         int id = authConfiguration.getAuths().get(currentSession);
-
         Post post = new Post();
-        createNewPost(postRequest, userRepository.getOne(id), post);
-
+        post.setUser(userRepository.getOne(id));
+        createNewPost(request, post);
         if (globalSettingsRepository.postPremoderation().equals("YES"))
             post.setModerationStatus(PostStatus.NEW);
         else {
             post.setModerationStatus(PostStatus.ACCEPTED);
             post.setActive(true);
         }
-
         postRepository.saveAndFlush(post);
-
-        SuccessfullyAddedPost addedPost = new SuccessfullyAddedPost();
-        addedPost.setResult(true);
-        return addedPost;
+        return response;
     }
 
     /**
@@ -323,82 +302,60 @@ public class PostServiceImpl implements PostService {
      * Метод изменяет данные поста, которые пользователь ввёл в форму публикации
      *
      * @param id поста, который мы хотим изменить
-     * @see PostRequest
      */
     @Override
-    public AbstractResponse editPost(int id, PostRequest postRequest) {
-        ErrorAddingPost errorResponse = checkPostData(postRequest);
-        if (!errorResponse.isResult())
-            return errorResponse;
-
-        if (postRequest.getTimestamp() < (new Date()).getTime()) {
-            long newTimeStamp = (new Date()).getTime();
-            postRequest.setTimestamp(newTimeStamp);
-        }
-
+    public BasicResponse editPost
+    (int id, BasicRequest request) {
+        BasicResponse response = checkPostData(request);
+        if (!response.isResult())
+            return response;
+        if (request.getTimestamp() < (new Date()).getTime())
+            request.setTimestamp((new Date()).getTime());
         String currentSession = RequestContextHolder
                 .currentRequestAttributes().getSessionId();
         int userIdFromContext = authConfiguration
                 .getAuths().get(currentSession);
         User user = userRepository.getOne(userIdFromContext);
-
-        if ((userIdFromContext != id) &&
-                (userRepository.isAdmin(userIdFromContext) == 0)) {
-            ErrorAddingPost errorAuthResponse = new ErrorAddingPost();
-            errorAuthResponse.setResult(false);
-            TextError textError = new TextError();
-            textError.setText("Вы не являетесь модератором и это не ваш пост");
-            List<AbstractError> errors = new ArrayList<>();
-            errors.add(textError);
-            errorAuthResponse.setErrors(errors);
-            return errorAuthResponse;
-        }
-
         Post post = postRepository.getOne(id);
-        createNewPost(postRequest, user, post);
-        if (user.getId() == id)
+        createNewPost(request, post);
+        if (user.getId() == post.getUser().getId())
             post.setModerationStatus(PostStatus.NEW);
-
         postRepository.saveAndFlush(post);
-
-        SuccessfullyAddedPost addedPost = new SuccessfullyAddedPost();
-        addedPost.setResult(true);
-        return addedPost;
+        return response;
     }
 
     /**
      * Метод like
      * Метод сохраняет в таблицу post_votes лайк текущего авторизованного
      * пользователя
-     *
-     * @see main.request.PostVoteRequest
      */
     @Override
-    public AbstractResponse like(PostVoteRequest request) {
+    public BasicResponse like(AdditionalRequest request) {
         String currentSession = RequestContextHolder
                 .currentRequestAttributes().getSessionId();
-        int userId = authConfiguration.getAuths().get(currentSession);
-        SuccessfullyAddedPost response = new SuccessfullyAddedPost();
-
-        PostVote postVote = postVoteRepository
-                .getPostVoteByPostAndUser(request.getPostId(), userId);
-        if (postVote == null) {
-            PostVote newPostVote = new PostVote();
-            newPostVote.setPost(postRepository.getPost(request.getPostId()));
-            newPostVote.setTime(new Date());
-            newPostVote.setUser(userRepository.getOne(userId));
-            newPostVote.setValue(1);
-            postVoteRepository.saveAndFlush(newPostVote);
-            response.setResult(true);
-        }
-        else {
-            if (postVote.getValue() == 1)
-                response.setResult(false);
-            else {
-                postVote.setValue(1);
-                postVote.setTime(new Date());
-                postVoteRepository.saveAndFlush(postVote);
+        BasicResponse response = new BasicResponse();
+        response.setResult(false);
+        if (authConfiguration.getAuths().get(currentSession) != null) {
+            int userId = authConfiguration.getAuths().get(currentSession);
+            PostVote postVote = postVoteRepository
+                    .getPostVoteByPostAndUser(request.getPostId(), userId);
+            if (postVote == null) {
+                PostVote newPostVote = new PostVote();
+                newPostVote.setPost(postRepository.getPost(request.getPostId()));
+                newPostVote.setTime(new Date());
+                newPostVote.setUser(userRepository.getOne(userId));
+                newPostVote.setValue(1);
+                postVoteRepository.saveAndFlush(newPostVote);
                 response.setResult(true);
+            } else {
+                if (postVote.getValue() == 1)
+                    response.setResult(false);
+                else {
+                    postVote.setValue(1);
+                    postVote.setTime(new Date());
+                    postVoteRepository.saveAndFlush(postVote);
+                    response.setResult(true);
+                }
             }
         }
         return response;
@@ -408,35 +365,34 @@ public class PostServiceImpl implements PostService {
      * Метод dislike
      * Метод сохраняет в таблицу post_votes дизлайк текущего авторизованного
      * пользователя
-     *
-     * @see main.request.PostVoteRequest
      */
     @Override
-    public AbstractResponse dislike(PostVoteRequest request) {
+    public BasicResponse dislike(AdditionalRequest request) {
         String currentSession = RequestContextHolder
                 .currentRequestAttributes().getSessionId();
-        int userId = authConfiguration.getAuths().get(currentSession);
-        SuccessfullyAddedPost response = new SuccessfullyAddedPost();
-
-        PostVote postVote = postVoteRepository
-                .getPostVoteByPostAndUser(request.getPostId(), userId);
-        if (postVote == null) {
-            PostVote newPostVote = new PostVote();
-            newPostVote.setPost(postRepository.getPost(request.getPostId()));
-            newPostVote.setTime(new Date());
-            newPostVote.setUser(userRepository.getOne(userId));
-            newPostVote.setValue(-1);
-            postVoteRepository.saveAndFlush(newPostVote);
-            response.setResult(true);
-        }
-        else {
-            if (postVote.getValue() == -1)
-                response.setResult(false);
-            else {
-                postVote.setValue(-1);
-                postVote.setTime(new Date());
-                postVoteRepository.saveAndFlush(postVote);
+        BasicResponse response = new BasicResponse();
+        response.setResult(false);
+        if (authConfiguration.getAuths().get(currentSession) != null) {
+            int userId = authConfiguration.getAuths().get(currentSession);
+            PostVote postVote = postVoteRepository
+                    .getPostVoteByPostAndUser(request.getPostId(), userId);
+            if (postVote == null) {
+                PostVote newPostVote = new PostVote();
+                newPostVote.setPost(postRepository.getPost(request.getPostId()));
+                newPostVote.setTime(new Date());
+                newPostVote.setUser(userRepository.getOne(userId));
+                newPostVote.setValue(-1);
+                postVoteRepository.saveAndFlush(newPostVote);
                 response.setResult(true);
+            } else {
+                if (postVote.getValue() == -1)
+                    response.setResult(false);
+                else {
+                    postVote.setValue(-1);
+                    postVote.setTime(new Date());
+                    postVoteRepository.saveAndFlush(postVote);
+                    response.setResult(true);
+                }
             }
         }
         return response;
@@ -468,48 +424,40 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-    private ErrorAddingPost checkPostData(PostRequest postRequest) {
-        ErrorAddingPost response = new ErrorAddingPost();
+    private BasicResponse checkPostData(BasicRequest request) {
+        BasicResponse response = new BasicResponse();
         response.setResult(true);
-        String titleError = "", textError = "";
-        if (postRequest.getTitle().length() == 0)
-            titleError = "Заголовок не установлен";
-        else
-        if (postRequest.getTitle().length() < 3)
-            titleError = "Текст заголовка слишком короткий";
-        if (postRequest.getText().length() == 0)
-            textError = "Публикация не установлена";
-        else
-        if (postRequest.getText().length() < 50)
-            textError = "Текст публикации слишком короткий";
-        if ((textError.length() != 0) || (titleError.length() != 0)) {
-            List<AbstractError> errors = new ArrayList<>();
-            if (titleError.length() != 0) {
-                TitleError theTitleError = new TitleError();
-                theTitleError.setTitle(titleError);
-                errors.add(theTitleError);
-            }
-            if (textError.length() != 0) {
-                TextError theTextError = new TextError();
-                theTextError.setText(textError);
-                errors.add(theTextError);
-            }
+        BasicResponse errors = new BasicResponse();
+        if ((request.getTitle().length() == 0) ||
+                (request.getTitle() == null)) {
             response.setResult(false);
-            response.setErrors(errors);
+            errors.setTitle("Заголовок не установлен");
         }
+        else
+            if (request.getTitle().length() < 3) {
+                response.setResult(false);
+                errors.setTitle("Текст заголовка слишком короткий");
+            }
+        if (request.getText().length() == 0) {
+            response.setResult(false);
+            errors.setText("Публикация не установлена");
+        }
+        else
+            if (request.getText().length() < 50) {
+                response.setResult(false);
+                errors.setText("Текст публикации слишком короткий");
+            }
         return response;
     }
 
-    private Post createNewPost(PostRequest postRequest, User user, Post post) {
-        post.setActive(postRequest.getActive() == 1);
-        post.setTime(new Date(postRequest.getTimestamp()));
-        post.setTitle(postRequest.getTitle());
-        post.setText(postRequest.getText());
-        post.setUser(user);
-
+    private Post createNewPost(BasicRequest request, Post post) {
+        post.setActive(request.getActive() == 1);
+        post.setTime(new Date(request.getTimestamp()));
+        post.setTitle(request.getTitle());
+        post.setText(request.getText());
         List<String> namesOfCurrentTags = tagRepository.findNamesOfTags();
         Set<Tag> newTags = new HashSet<>();
-        for (String nameOfTagFromRequest : postRequest.getTags()) {
+        for (String nameOfTagFromRequest : request.getTags()) {
             Tag newTag = new Tag();
             if (namesOfCurrentTags.contains(nameOfTagFromRequest))
                 newTag = tagRepository.findTagByName(nameOfTagFromRequest);

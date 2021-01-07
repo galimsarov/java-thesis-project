@@ -15,13 +15,12 @@ import java.util.regex.Pattern;
  * Класс PostResponseMapper
  * Класс для подготовки объектов для вида, воспринимаемого фронтом
  *
- * @version 1.0
+ * @version 1.1
  */
 @Mapper
 public class PostResponseMapper {
-
     /**
-     * Метод postToPostDTO
+     * Метод postToBasicResponse
      * Метод готовит объекты для вывода постов:
      *      - для главной страницы и подразделов "Новые", "Самые обсуждаемые",
      *      "Лучшие" и "Старые"
@@ -35,20 +34,24 @@ public class PostResponseMapper {
      *      posts базы данных)
      *
      * @param post пост, который нужно преобразовать, к виду PostResponse
-     * @see PostResponse
      */
-    public PostResponse postToPostDTO(Post post) {
-        PostResponse postDTO = new PostResponse();
-        postDTO.setId(post.getId());
-        postDTO.setTimestamp(post.getTime().getTime()/1000);
-        postDTO.setUser(getUserDTO(post));
-        postDTO.setTitle(post.getTitle());
-        postDTO.setAnnounce(getAnnounceDTO(post));
-        postDTO.setLikeCount(getLikes(post));
-        postDTO.setDislikeCount(getDislikes(post));
-        postDTO.setCommentCount(post.getPostCommentList().size());
-        postDTO.setViewCount(post.getViewCount());
-        return postDTO;
+    public BasicResponse postToBasicResponse(Post post) {
+        BasicResponse response = new BasicResponse();
+        response.setId(post.getId());
+        response.setTimestamp(post.getTime().getTime()/1000);
+
+        BasicResponse user = new BasicResponse();
+        user.setId(post.getUser().getId());
+        user.setName(post.getUser().getName());
+        response.setUser(user);
+
+        response.setTitle(post.getTitle());
+        response.setAnnounce(getAnnounceDTO(post));
+        response.setLikeCount(getLikes(post));
+        response.setDislikeCount(getDislikes(post));
+        response.setCommentCount(post.getPostCommentList().size());
+        response.setViewCount(post.getViewCount());
+        return response;
     }
 
     /**
@@ -57,31 +60,36 @@ public class PostResponseMapper {
      * странице поста, в том числе, список комментариев и тэгов, привязанных
      * к данному посту
      *
-     * @param post пост, который нужно преобразовать, к виду SpecificPostResponse
-     * @see SpecificPostResponse
+     * @param post пост, который нужно преобразовать
      */
-    public SpecificPostResponse postToSpecificPost(Post post) {
-        SpecificPostResponse response = new SpecificPostResponse();
+    public BasicResponse postToSpecificPost(Post post) {
+        BasicResponse response = new BasicResponse();
         response.setId(post.getId());
         response.setTimestamp(post.getTime().getTime()/1000);
         response.setActive(post.isActive());
-        response.setUser(getUserDTO(post));
+
+        BasicResponse userDTO = new BasicResponse();
+        userDTO.setId(post.getUser().getId());
+        userDTO.setName(post.getUser().getName());
+        response.setUser(userDTO);
+
         response.setTitle(post.getTitle());
         response.setText(post.getText());
         response.setLikeCount(getLikes(post));
         response.setDislikeCount(getDislikes(post));
         response.setViewCount(post.getViewCount());
-        List<PostComment> postComments = post.getPostCommentList();
-        if (postComments.size() != 0)
-            response.setComments(
-                    getCommentsResponse(postComments));
-        else
-            response.setComments(new ArrayList<>());
+        response.setComments(getCommentsResponse(post.getPostCommentList()));
+
         Set<Tag> tagSet = post.getTagSet();
-        if (tagSet.size() != 0)
-            response.setTags(getStringTags(tagSet));
+        if (tagSet.size() != 0) {
+            Set<String> stringSet = new HashSet<>();
+            for (Tag tag : tagSet)
+                stringSet.add(tag.getName());
+            response.setTags(stringSet);
+        }
         else
             response.setTags(new HashSet<>());
+
         return response;
     }
 
@@ -107,13 +115,6 @@ public class PostResponseMapper {
         }
     }
 
-    private UserBasicResponse getUserDTO(Post post) {
-        UserBasicResponse userDTO = new UserBasicResponse();
-        userDTO.setId(post.getUser().getId());
-        userDTO.setName(post.getUser().getName());
-        return userDTO;
-    }
-
     private int getLikes(Post post) {
         int likesCount = 0;
         for (PostVote postVote : post.getPostVoteList())
@@ -130,34 +131,26 @@ public class PostResponseMapper {
         return disLikesCount;
     }
 
-    private List<CommentResponse> getCommentsResponse
+    private List<AdditionalResponse> getCommentsResponse
             (List<PostComment> comments) {
-        List<CommentResponse> commentResponses = new ArrayList<>();
+        List<AdditionalResponse> additionalRespons = new ArrayList<>();
         for (PostComment comment : comments) {
-                CommentResponse response = new CommentResponse();
+                AdditionalResponse response = new AdditionalResponse();
                 response.setId(comment.getId());
                 response.setTimestamp(comment.getTime().getTime()/1000);
                 response.setText(comment.getText());
-                response.setUser(getUserWithPhoto(comment.getUser()));
+
+                UserWithPhotoResponse userWithPhoto =
+                        new UserWithPhotoResponse();
+                userWithPhoto.setId(comment.getUser().getId());
+                userWithPhoto.setName(comment.getUser().getName());
+                userWithPhoto.setPhoto(comment.getUser().getPhoto());
+
+                response.setUser(userWithPhoto);
                 if (comment.getParentId() != null)
                     response.setParentId(comment.getParentId());
-                commentResponses.add(response);
+                additionalRespons.add(response);
         }
-        return commentResponses;
-    }
-
-    private UserWithPhotoResponse getUserWithPhoto(User user) {
-        UserWithPhotoResponse response = new UserWithPhotoResponse();
-        response.setId(user.getId());
-        response.setName(user.getName());
-        response.setPhoto(user.getPhoto());
-        return response;
-    }
-
-    private Set<String> getStringTags(Set<Tag> tags) {
-        Set<String> stringSet = new HashSet<>();
-        for (Tag tag : tags)
-            stringSet.add(tag.getName());
-        return stringSet;
+        return additionalRespons;
     }
 }

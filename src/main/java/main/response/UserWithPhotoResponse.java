@@ -1,10 +1,15 @@
 package main.response;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+/**
+ * Класс UserWithPhotoResponse
+ * Реализован отдельный класс для авторов комментариев к постам. Теоретически
+ * можно использовать и BasicResponse, но тогда получаю StackOverflow
+ *
+ * @version 1.0
+ */
+@Data
 public class UserWithPhotoResponse {
     private int id;
     private String name;

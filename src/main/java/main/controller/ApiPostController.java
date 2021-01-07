@@ -1,23 +1,17 @@
 package main.controller;
 
-import main.request.PostRequest;
-import main.request.PostVoteRequest;
-import main.response.AbstractResponse;
-import main.response.ListOfPostsResponse;
-import main.response.SpecificPostResponse;
+import main.request.AdditionalRequest;
+import main.request.BasicRequest;
+import main.response.BasicResponse;
 import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Objects;
 
 /**
  * Класс ApiPostController
  * REST-контроллер, обрабатывает все запросы /api/post/*
  *
- * @version 1.0
+ * @version 1.1
  */
 
 @RestController
@@ -35,10 +29,9 @@ public class ApiPostController {
      * @param limit количество постов, которое надо вывести
      * @param mode режим вывода (сортировка): popular, best, early либо recent, если
      *             другие значения не были указаны
-     * @see ListOfPostsResponse
      */
     @GetMapping
-    public ListOfPostsResponse listOfPosts(
+    public BasicResponse listOfPosts(
             @RequestParam int offset,
             @RequestParam int limit,
             @RequestParam String mode) {
@@ -53,10 +46,9 @@ public class ApiPostController {
      * @param offset сдвиг от 0 для постраничного вывода
      * @param limit количество постов, которое надо вывести
      * @param query поисковый запрос
-     * @see ListOfPostsResponse
      */
     @GetMapping("/search")
-    public ListOfPostsResponse searchForPosts(
+    public BasicResponse searchForPosts(
             @RequestParam int offset,
             @RequestParam int limit,
             @RequestParam String query) {
@@ -71,10 +63,9 @@ public class ApiPostController {
      * @param offset сдвиг от 0 для постраничного вывода
      * @param limit количество постов, которое надо вывести
      * @param date дата в формате "2019-10-15"
-     * @see ListOfPostsResponse
      */
     @GetMapping("/byDate")
-    public ListOfPostsResponse postsByDate(
+    public BasicResponse postsByDate(
             @RequestParam int offset,
             @RequestParam int limit,
             @RequestParam String date) {
@@ -89,10 +80,9 @@ public class ApiPostController {
      * @param offset сдвиг от 0 для постраничного вывода
      * @param limit количество постов, которое надо вывести
      * @param tag тэг, по которому нужно вывести все посты
-     * @see ListOfPostsResponse
      */
     @GetMapping("/byTag")
-    public ListOfPostsResponse postsByTag(
+    public BasicResponse postsByTag(
             @RequestParam int offset,
             @RequestParam int limit,
             @RequestParam String tag) {
@@ -107,10 +97,9 @@ public class ApiPostController {
      * @param offset сдвиг от 0 для постраничного вывода
      * @param limit количество постов, которое надо вывести
      * @param status статус модерации: new, declined или accepted
-     * @see ListOfPostsResponse
      */
     @GetMapping("/moderation")
-    public ListOfPostsResponse listOfPostsForModeration(
+    public BasicResponse listOfPostsForModeration(
             @RequestParam int offset,
             @RequestParam int limit,
             @RequestParam String status) {
@@ -125,10 +114,9 @@ public class ApiPostController {
      * @param offset сдвиг от 0 для постраничного вывода
      * @param limit количество постов, которое надо вывести
      * @param status статус модерации: inactive, pending, declined или published
-     * @see ListOfPostsResponse
      */
     @GetMapping("/my")
-    public ListOfPostsResponse listOfMyPosts(
+    public BasicResponse listOfMyPosts(
             @RequestParam int offset,
             @RequestParam int limit,
             @RequestParam String status) {
@@ -141,26 +129,22 @@ public class ApiPostController {
      * GET запрос /api/post/{id}
      *
      * @param id поста, который мы хотим найти
-     * @see SpecificPostResponse
      */
     @GetMapping("/{id}")
-    public Object getPost(@PathVariable(value = "id") int id) {
-        SpecificPostResponse response =
-                postService.getPost(id);
-        return Objects.requireNonNullElseGet
-                (response, () -> new ResponseEntity(HttpStatus.NOT_FOUND));
+    public BasicResponse getPost(
+            @PathVariable(value = "id") int id) {
+        return postService.getPost(id);
     }
 
     /**
      * Метод addPost
      * Метод отправляет данные поста, которые пользователь ввёл в форму публикации
      * POST запрос /api/post
-     *
-     * @see PostRequest
      */
     @PostMapping
-    public AbstractResponse addPost(@RequestBody PostRequest postRequest) {
-        return postService.addPost(postRequest);
+    public BasicResponse addPost(
+            @RequestBody BasicRequest request) {
+        return postService.addPost(request);
     }
 
     /**
@@ -169,12 +153,11 @@ public class ApiPostController {
      * POST запрос /api/post
      *
      * @param id поста, который мы хотим изменить
-     * @see PostRequest
      */
     @PutMapping("/{id}")
-    public AbstractResponse editPost(@PathVariable(value = "id") int id,
-                                     @RequestBody PostRequest postRequest) {
-        return postService.editPost(id, postRequest);
+    public BasicResponse editPost(@PathVariable(value = "id") int id,
+                                  @RequestBody BasicRequest request) {
+        return postService.editPost(id, request);
     }
 
     /**
@@ -182,11 +165,9 @@ public class ApiPostController {
      * Метод сохраняет в таблицу post_votes лайк текущего авторизованного
      * пользователя
      * POST запрос /api/post/like
-     *
-     * @see main.request.PostVoteRequest
      */
     @PostMapping("/like")
-    public AbstractResponse like(@RequestBody PostVoteRequest request) {
+    public BasicResponse like(@RequestBody AdditionalRequest request) {
         return postService.like(request);
     }
 
@@ -195,11 +176,9 @@ public class ApiPostController {
      * Метод сохраняет в таблицу post_votes дизлайк текущего авторизованного
      * пользователя
      * POST запрос /api/post/dislike
-     *
-     * @see main.request.PostVoteRequest
      */
     @PostMapping("/dislike")
-    public AbstractResponse dislike(@RequestBody PostVoteRequest request) {
+    public BasicResponse dislike(@RequestBody AdditionalRequest request) {
         return postService.dislike(request);
     }
 }

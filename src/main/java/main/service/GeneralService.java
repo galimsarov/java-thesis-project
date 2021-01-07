@@ -1,12 +1,7 @@
 package main.service;
 
-import main.request.CommentRequest;
-import main.request.EditProfileWithPasswordRequest;
-import main.request.EditProfileWithPhotoRequest;
-import main.request.PostModerationRequest;
-import main.response.AbstractResponse;
-import main.response.Blog;
-import main.response.SettingsResponse;
+import main.request.*;
+import main.response.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -14,15 +9,14 @@ import java.io.IOException;
 public interface GeneralService {
     Blog getBlogInfo();
     Object imageUpload(MultipartFile multipartFile) throws IOException;
-    AbstractResponse sendComment(CommentRequest commentRequest);
-    AbstractResponse getListOfTags(String query);
-    AbstractResponse postModeration(PostModerationRequest request);
-    AbstractResponse numberOfPosts(Integer year);
-    AbstractResponse editProfile(EditProfileWithPasswordRequest request);
-    AbstractResponse editProfile(
-            EditProfileWithPhotoRequest request) throws IOException;
-    AbstractResponse myStatistics();
+    BasicResponse sendComment(BasicRequest request);
+    AdditionalResponse getListOfTags(String query);
+    BasicResponse postModeration(BasicRequest request);
+    AdditionalResponse numberOfPosts(Integer year);
+    Object editProfile(BasicRequest request);
+    Object editProfileWithPhoto(BasicRequest request) throws IOException;
+    BasicResponse myStatistics();
     Object allStatistics();
-    SettingsResponse getSettings();
-    void putSettings(SettingsResponse request);
+    BasicResponse getSettings();
+    void putSettings(AdditionalRequest request);
 }

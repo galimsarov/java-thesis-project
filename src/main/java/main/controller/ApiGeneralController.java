@@ -1,18 +1,13 @@
 package main.controller;
 
 import main.request.*;
-import main.response.AbstractResponse;
-import main.response.Blog;
-import main.response.SettingsResponse;
+import main.response.*;
 import main.service.GeneralService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.Objects;
 
 /**
  * Класс ApiGeneralController
@@ -54,15 +49,10 @@ public class ApiGeneralController {
      * Метод sendComment
      * Метод добавляет комментарий к посту
      * POST запрос /api/comment
-     *
-     * @see main.request.CommentRequest
      */
     @PostMapping("/comment")
-    public Object sendComment(@RequestBody CommentRequest commentRequest) {
-        AbstractResponse response = generalService
-                .sendComment(commentRequest);
-        return Objects.requireNonNullElseGet
-                (response, () -> new ResponseEntity(HttpStatus.BAD_REQUEST));
+    public BasicResponse sendComment(@RequestBody BasicRequest request) {
+        return generalService.sendComment(request);
     }
 
     /**
@@ -72,24 +62,24 @@ public class ApiGeneralController {
      * GET запрос /api/tag
      *
      * @param query часть тэга или тэг, м.б. не задан, м.б. пустым
-     * @see main.response.TagWithWeight
      */
     @GetMapping("/tag")
-    public AbstractResponse getListOfTags(
+    public AdditionalResponse getListOfTags(
             @RequestParam(required = false) String query) {
         return generalService.getListOfTags(query);
     }
 
     /**
      * Метод postModeration
-     * Метод фиксирует действие модератора по посту: его утверждение или отклонение
+     * Метод фиксирует действие модератора по посту: его утверждение или
+     * отклонение
      * POST запрос /api/moderation
      *
      * @see main.request.PostModerationRequest
      */
     @PostMapping("/moderation")
-    public AbstractResponse postModeration(
-            @RequestBody PostModerationRequest request) {
+    public BasicResponse postModeration(
+            @RequestBody BasicRequest request) {
         return generalService.postModeration(request);
     }
 
@@ -103,7 +93,7 @@ public class ApiGeneralController {
      *             за текущий год
      */
     @GetMapping("/calendar")
-    public AbstractResponse numberOfPosts(
+    public AdditionalResponse numberOfPosts(
             @RequestParam(required = false) Integer year) {
         return generalService.numberOfPosts(year);
     }
@@ -111,30 +101,26 @@ public class ApiGeneralController {
     /**
      * Метод editProfile
      * Метод обрабатывает информацию, введённую пользователем в форму
-     * редактирования своего профиля
+     * редактирования своего профиля, без изменения фото
      * POST запрос /api/profile/my
-     *
-     * @see EditProfileWithPasswordRequest
      */
     @PostMapping(value = "/profile/my", consumes = "application/json")
-    public AbstractResponse editProfile(
-            @RequestBody EditProfileWithPasswordRequest request) {
+    public Object editProfile(
+            @RequestBody BasicRequest request) {
         return generalService.editProfile(request);
     }
 
     /**
-     * Метод editProfile
+     * Метод editProfileWithPhoto
      * Метод обрабатывает информацию, введённую пользователем в форму
-     * редактирования своего профиля
+     * редактирования своего профиля, с изменением фото
      * POST запрос /api/profile/my
-     *
-     * @see EditProfileWithPhotoRequest
      */
     @PostMapping("/profile/my")
-    public AbstractResponse editProfile(
-            @ModelAttribute EditProfileWithPhotoRequest request)
+    public Object editProfileWithPhoto(
+            @ModelAttribute BasicRequest request)
             throws IOException {
-        return generalService.editProfile(request);
+        return generalService.editProfileWithPhoto(request);
     }
 
     /**
@@ -143,7 +129,7 @@ public class ApiGeneralController {
      * GET запрос /api/statistics/my
      */
     @GetMapping("/statistics/my")
-    public AbstractResponse myStatistics() {
+    public BasicResponse myStatistics() {
         return generalService.myStatistics();
     }
 
@@ -163,7 +149,7 @@ public class ApiGeneralController {
      * GET запрос /api/settings
      */
     @GetMapping("/settings")
-    public SettingsResponse getSettings() {
+    public BasicResponse getSettings() {
         return generalService.getSettings();
     }
 
@@ -174,7 +160,7 @@ public class ApiGeneralController {
      * PUT запрос /api/settings
      */
     @PutMapping("/settings")
-    public void putSettings(@RequestBody SettingsResponse request) {
+    public void putSettings(@RequestBody AdditionalRequest request) {
         generalService.putSettings(request);
     }
 }

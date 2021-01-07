@@ -18,6 +18,6 @@ public class SpecificPostResponse {
     private int likeCount;
     private int dislikeCount;
     private int viewCount;
-    private List<CommentResponse> comments;
+    private List<AdditionalResponse> comments;
     private Set<String> tags;
 }

@@ -11,10 +11,7 @@ import main.repository.GlobalSettingsRepository;
 import main.repository.PostCommentRepository;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
-import main.request.CommentRequest;
-import main.request.EditProfileWithPasswordRequest;
-import main.request.EditProfileWithPhotoRequest;
-import main.request.PostModerationRequest;
+import main.request.*;
 import main.response.*;
 import main.service.GeneralService;
 import org.springframework.http.HttpStatus;
@@ -24,10 +21,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.ImageIO;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityNotFoundException;
-import javax.persistence.PersistenceContext;
-import javax.persistence.Query;
+import javax.persistence.*;
 import javax.servlet.http.HttpServletRequest;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -73,31 +67,22 @@ public class GeneralServiceImpl implements GeneralService {
     @Override
     public Object imageUpload(MultipartFile file) throws IOException {
         String response = null;
-
+        BasicResponse errorResponse = new BasicResponse();
+        errorResponse.setResult(false);
+        BasicResponse errors = new BasicResponse();
         if (!file.getOriginalFilename().endsWith("jpg") &&
-                !file.getOriginalFilename().endsWith("png")) {
-            ErrorAddingImage errorResponse = new ErrorAddingImage();
-            errorResponse.setResult(false);
-            ImageError imageError = new ImageError();
-            imageError.setImage("Файл не является изображением");
-            errorResponse.setErrors(imageError);
+                !file.getOriginalFilename().endsWith("png"))
+            errors.setImage("Файл не является изображением");
+        if (file.getSize() > 1048576)
+            errors.setImage("Размер файла превышает допустимый размер");
+        if (errors.getImage() != null) {
+            errorResponse.setErrors(errors);
             return errorResponse;
         }
-
-        if (file.getSize() > 1048576) {
-            ErrorAddingImage errorResponse = new ErrorAddingImage();
-            errorResponse.setResult(false);
-            ImageError imageError = new ImageError();
-            imageError.setImage("Размер файла превышает допустимый размер");
-            errorResponse.setErrors(imageError);
-            return errorResponse;
-        }
-
         if (!file.isEmpty()) {
             String uploadsDir = "/upload/";
             String realPathToUploads = request.getServletContext()
                     .getRealPath(uploadsDir);
-
             String workPiece = "abcdefghijklmnopqrstuvwxyz";
             String[] subDirs = new String[3];
             for (int i = 0; i < 3; i++) {
@@ -105,22 +90,18 @@ public class GeneralServiceImpl implements GeneralService {
                 int range = random.nextInt(25);
                 subDirs[i] = workPiece.substring(range, range + 2);
             }
-
             if (!new File(realPathToUploads).exists())
                 new File(realPathToUploads).mkdir();
-
             for (String subDir : subDirs) {
                 realPathToUploads += subDir + "/";
                 if (!new File(realPathToUploads).exists())
                     new File(realPathToUploads).mkdir();
                 uploadsDir += subDir + "/";
             }
-
             String orgName = file.getOriginalFilename();
             String filePath = realPathToUploads + orgName;
             File dest = new File(filePath);
             file.transferTo(dest);
-
             response = uploadsDir + file.getOriginalFilename();
         }
         return response;
@@ -129,49 +110,39 @@ public class GeneralServiceImpl implements GeneralService {
     /**
      * Метод sendComment
      * Метод добавляет комментарий к посту
-     *
-     * @see main.request.CommentRequest
      */
     @Override
-    public AbstractResponse sendComment(CommentRequest commentRequest) {
-        if (commentRequest.getText().length() < 3) {
-            TextError textError = new TextError();
-            if (commentRequest.getText().length() == 0)
-                textError.setText("Комментарий не установлен");
+    public BasicResponse sendComment(BasicRequest request) {
+        BasicResponse response = new BasicResponse();
+        if (request.getText().length() < 3) {
+            BasicResponse errors = new BasicResponse();
+            if (request.getText().length() == 0)
+                errors.setText("Комментарий не установлен");
             else
-                textError.setText("Текст комментария слишком короткий");
-            ErrorAddingComment errorResponse = new ErrorAddingComment();
-            errorResponse.setResult(false);
-            errorResponse.setErrors(textError);
-            return errorResponse;
+                errors.setText("Текст комментария слишком короткий");
+            response.setResult(false);
+            response.setErrors(errors);
+            return response;
         }
-        IdResponse response = null;
         try {
-            Post post = postRepository.getOne(commentRequest.getPost_id());
+            Post post = postRepository.getOne(request.getPost_id());
             PostComment comment = new PostComment();
-
             PostComment parentComment = commentRepository
-                    .getOne(commentRequest.getParent_id());
+                    .getOne(request.getParent_id());
             if (parentComment.getId() != 0) {
                 String tempText = parentComment.getText();
             }
-
             String currentSession = RequestContextHolder
                     .currentRequestAttributes().getSessionId();
             int id = authConfiguration.getAuths().get(currentSession);
             User user = userRepository.getOne(id);
-
-            comment.setParentId(commentRequest.getParent_id());
+            comment.setParentId(request.getParent_id());
             comment.setPost(post);
-            comment.setText(commentRequest.getText());
+            comment.setText(request.getText());
             comment.setTime(new Date());
             comment.setUser(user);
-
             post.addPostComment(comment);
-
             postRepository.saveAndFlush(post);
-
-            response = new IdResponse();
             response.setId(commentRepository.findIdByTime(comment.getTime()));
         }
         catch (EntityNotFoundException e) {
@@ -185,10 +156,9 @@ public class GeneralServiceImpl implements GeneralService {
      * Метод выдаёт список тэгов, начинающихся на строку, заданную в параметре
      *
      * @param query часть тэга или тэг, м.б. не задан, м.б. пустым
-     * @see main.response.TagWithWeight
      */
     @Override
-    public AbstractResponse getListOfTags(String query) {
+    public AdditionalResponse getListOfTags(String query) {
         if (query == null)
             query = "";
         Query nativeQuery = entityManager.createNativeQuery
@@ -203,18 +173,19 @@ public class GeneralServiceImpl implements GeneralService {
                         "as ready_tags where name like concat(?1,'%') " +
                         "group by name");
         nativeQuery.setParameter(1, query);
-        List<Object[]> tags = nativeQuery.getResultList();
+        List<Object[]> listOfArrays = nativeQuery.getResultList();
         int totalPosts = postRepository.getActivePosts();
 
-        List<TagWithWeight> list = new ArrayList<>();
-        ListOfTags response = new ListOfTags();
+        AdditionalResponse response = new AdditionalResponse();
+        List<AdditionalResponse> tags = new ArrayList<>();
 
-        BigInteger currentBig = new BigInteger(tags.get(0)[1].toString());
+        BigInteger currentBig = new BigInteger(listOfArrays
+                .get(0)[1].toString());
         int currentCount = currentBig.intValue();
         float maxWeight = (float)(currentCount) / totalPosts;
 
-        for (Object[] objects : tags) {
-            TagWithWeight tag = new TagWithWeight();
+        for (Object[] objects : listOfArrays) {
+            AdditionalResponse tag = new AdditionalResponse();
             currentBig = new BigInteger(objects[1].toString());
             currentCount = currentBig.intValue();
             float currentWeight = (float) (currentCount) / totalPosts;
@@ -222,13 +193,13 @@ public class GeneralServiceImpl implements GeneralService {
                 maxWeight = currentWeight;
             tag.setName(objects[0].toString());
             tag.setWeight(currentWeight);
-            list.add(tag);
+            tags.add(tag);
         }
-        for (TagWithWeight tagWithWeight : list) {
+        for (AdditionalResponse tagWithWeight : tags) {
             tagWithWeight.setWeight
                     (tagWithWeight.getWeight()/maxWeight);
         }
-        response.setTags(list);
+        response.setTags(tags);
         return response;
     }
 
@@ -236,12 +207,10 @@ public class GeneralServiceImpl implements GeneralService {
      * Метод postModeration
      * Метод фиксирует действие модератора по посту: его утверждение или
      * отклонение
-     *
-     * @see main.request.PostModerationRequest
      */
     @Override
-    public AbstractResponse postModeration(PostModerationRequest request) {
-        SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+    public BasicResponse postModeration(BasicRequest request) {
+        BasicResponse response = new BasicResponse();
         response.setResult(false);
 
         String currentSession = RequestContextHolder
@@ -281,7 +250,7 @@ public class GeneralServiceImpl implements GeneralService {
      *             возвращать за текущий год
      */
     @Override
-    public AbstractResponse numberOfPosts(Integer year) {
+    public AdditionalResponse numberOfPosts(Integer year) {
         Query nativeQuery = entityManager.createNativeQuery
                 ("select distinct substr(time, 1, 4) as year from posts " +
                         "order by year asc");
@@ -316,7 +285,7 @@ public class GeneralServiceImpl implements GeneralService {
             posts.put(key, value);
         }
 
-        CalendarResponse response = new CalendarResponse();
+        AdditionalResponse response = new AdditionalResponse();
         response.setYears(years);
         response.setPosts(posts);
 
@@ -326,43 +295,32 @@ public class GeneralServiceImpl implements GeneralService {
     /**
      * Метод editProfile
      * Метод обрабатывает информацию, введённую пользователем в форму
-     * редактирования своего профиля
-     *
-     * @see EditProfileWithPasswordRequest
+     * редактирования своего профиля, без изменения фото
      */
     @Override
-    public AbstractResponse editProfile(
-            EditProfileWithPasswordRequest request) {
+    public Object editProfile(BasicRequest request) {
         User user = getUser(authConfiguration, userRepository);
 
-        EmailError emailError = checkEmail
+        BasicError emailError = checkEmail
                 (userRepository, request.getEmail(), user.getEmail());
-        NameError nameError = checkName(request.getName());
-        PasswordError passwordError = new PasswordError();
+        BasicError nameError = checkName(request.getName());
+        BasicError passwordError = new BasicError();
         if (request.getPassword() != null)
             passwordError = checkPassword(request.getPassword());
 
         if ((emailError.getEmail() != null) ||
                 (nameError.getName() != null) ||
                 (passwordError.getPassword() != null)) {
-            ErrorAddingPost response = new ErrorAddingPost();
+            BasicError response = new BasicError();
+            BasicError errors = new BasicError();
             response.setResult(false);
-            response.setErrors(new ArrayList<>());
-            if (emailError.getEmail() != null) {
-                List<AbstractError> temp = response.getErrors();
-                temp.add(emailError);
-                response.setErrors(temp);
-            }
-            if (nameError.getName() != null) {
-                List<AbstractError> temp = response.getErrors();
-                temp.add(nameError);
-                response.setErrors(temp);
-            }
-            if (passwordError.getPassword() != null) {
-                List<AbstractError> temp = response.getErrors();
-                temp.add(passwordError);
-                response.setErrors(temp);
-            }
+            if (emailError.getEmail() != null)
+                errors.setEmail(emailError.getEmail());
+            if (nameError.getName() != null)
+                errors.setName(nameError.getName());
+            if (passwordError.getPassword() != null)
+                errors.setPassword(passwordError.getPassword());
+            response.setErrors(errors);
             return response;
         }
         else {
@@ -375,60 +333,47 @@ public class GeneralServiceImpl implements GeneralService {
 
             userRepository.saveAndFlush(user);
 
-            SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+            BasicResponse response = new BasicResponse();
             response.setResult(true);
             return response;
         }
     }
 
     /**
-     * Метод editProfile
+     * Метод editProfileWithPhoto
      * Метод обрабатывает информацию, введённую пользователем в форму
-     * редактирования своего профиля
-     *
-     * @see EditProfileWithPhotoRequest
+     * редактирования своего профиля, с изменением фото
      */
     @Override
-    public AbstractResponse editProfile(
-            EditProfileWithPhotoRequest requestWithPhoto) throws IOException {
+    public Object editProfileWithPhoto(BasicRequest requestWithPhoto)
+            throws IOException {
         User user = getUser(authConfiguration, userRepository);
 
-        EmailError emailError = checkEmail
+        BasicError emailError = checkEmail
                 (userRepository, requestWithPhoto.getEmail(), user.getEmail());
-        NameError nameError = checkName(requestWithPhoto.getName());
-        PasswordError passwordError = new PasswordError();
+        BasicError nameError = checkName(requestWithPhoto.getName());
+        BasicError passwordError = new BasicError();
         if (requestWithPhoto.getPassword() != null)
             passwordError = checkPassword(requestWithPhoto.getPassword());
-        PhotoError photoError = new PhotoError();
+        BasicError photoError = new BasicError();
         if (requestWithPhoto.getPhoto().getSize() > 10485760)
             photoError.setPhoto("Фото слишком большое, нужно не более 10 Мб");
         if ((emailError.getEmail() != null) ||
                 (nameError.getName() != null) ||
                 (passwordError.getPassword() != null) ||
                 (photoError.getPhoto() != null)) {
-            ErrorAddingPost response = new ErrorAddingPost();
+            BasicError response = new BasicError();
+            BasicError errors = new BasicError();
             response.setResult(false);
-            response.setErrors(new ArrayList<>());
-            if (emailError.getEmail() != null) {
-                List<AbstractError> temp = response.getErrors();
-                temp.add(emailError);
-                response.setErrors(temp);
-            }
-            if (nameError.getName() != null) {
-                List<AbstractError> temp = response.getErrors();
-                temp.add(nameError);
-                response.setErrors(temp);
-            }
-            if (passwordError.getPassword() != null) {
-                List<AbstractError> temp = response.getErrors();
-                temp.add(passwordError);
-                response.setErrors(temp);
-            }
-            if (photoError.getPhoto() != null) {
-                List<AbstractError> temp = response.getErrors();
-                temp.add(photoError);
-                response.setErrors(temp);
-            }
+            if (emailError.getEmail() != null)
+                errors.setEmail(emailError.getEmail());
+            if (nameError.getName() != null)
+                errors.setName(nameError.getName());
+            if (passwordError.getPassword() != null)
+                errors.setPassword(passwordError.getPassword());
+            if (photoError.getPhoto() != null)
+                errors.setPhoto(photoError.getPhoto());
+            response.setErrors(errors);
             return response;
         }
         else {
@@ -467,7 +412,7 @@ public class GeneralServiceImpl implements GeneralService {
             BufferedImage image = ImageIO.read(dest);
             BufferedImage newImage = new BufferedImage(
                     36, 36, BufferedImage.TYPE_INT_RGB);
-            int startX = 0, startY = 0, step = 0;
+            int startX = 0, startY = 0, step;
             if (image.getWidth() > image.getHeight()) {
                 startX = image.getWidth() / 2 - image.getHeight() / 2;
                 step = image.getHeight() / 36;
@@ -484,14 +429,14 @@ public class GeneralServiceImpl implements GeneralService {
                 }
             File newFile = new File(
                     "src/main/resources/static/img/user" +
-                    user.getId() + "Ava.jpg");
+                            user.getId() + "Ava.jpg");
             ImageIO.write(newImage, "jpg", newFile);
 
             user.setPhoto("/img/user" + user.getId() + "Ava.jpg");
 
             userRepository.saveAndFlush(user);
 
-            SuccessfullyAddedPost response = new SuccessfullyAddedPost();
+            BasicResponse response = new BasicResponse();
             response.setResult(true);
             return response;
         }
@@ -502,11 +447,11 @@ public class GeneralServiceImpl implements GeneralService {
      * Метод возвращает статистику постов текущего авторизованного пользователя
      */
     @Override
-    public AbstractResponse myStatistics() {
+    public BasicResponse myStatistics() {
         String currentSession = RequestContextHolder
                 .currentRequestAttributes().getSessionId();
         int userId = authConfiguration.getAuths().get(currentSession);
-        StatisticsResponse response = new StatisticsResponse();
+        BasicResponse response = new BasicResponse();
         int postsCount = postRepository.getPostsCountOfUser(userId);
         if (postsCount == 0) {
             response.setPostsCount(0);
@@ -542,7 +487,7 @@ public class GeneralServiceImpl implements GeneralService {
                 (globalSettingsRepository.statisticsIsPublic().equals("NO")))
             return new ResponseEntity(HttpStatus.FORBIDDEN);
         else {
-            StatisticsResponse response = new StatisticsResponse();
+            BasicResponse response = new BasicResponse();
             response.setPostsCount(postRepository.getPostsCount());
             response.setLikesCount(postRepository.getLikesCount());
             response.setDislikesCount(postRepository.getDisLikesCount());
@@ -558,8 +503,8 @@ public class GeneralServiceImpl implements GeneralService {
      * Метод возвращает глобальные настройки блога из таблицы global_settings
      */
     @Override
-    public SettingsResponse getSettings() {
-        SettingsResponse response = new SettingsResponse();
+    public BasicResponse getSettings() {
+        BasicResponse response = new BasicResponse();
         List <GlobalSetting> settings = globalSettingsRepository.findAll();
         for (GlobalSetting setting : settings) {
             if (setting.getCode().equals("MULTIUSER_MODE"))
@@ -581,7 +526,7 @@ public class GeneralServiceImpl implements GeneralService {
      * если запрашивающий пользователь авторизован и является модератором
      */
     @Override
-    public void putSettings(SettingsResponse request) {
+    public void putSettings(AdditionalRequest request) {
         String currentSession = RequestContextHolder
                 .currentRequestAttributes().getSessionId();
         int userId = authConfiguration.getAuths().get(currentSession);
@@ -616,26 +561,26 @@ public class GeneralServiceImpl implements GeneralService {
         return userRepository.findById(id).get();
     }
 
-    private static EmailError checkEmail
+    private static BasicError checkEmail
             (UserRepository userRepository,
              String requestEmail,
              String sessionEmail) {
-        EmailError emailError = new EmailError();
+        BasicError emailError = new BasicError();
         if ((userRepository.findByEmail(requestEmail) != null)
                 && !sessionEmail.equals(requestEmail))
             emailError.setEmail("Этот e-mail уже зарегистрирован");
         return emailError;
     }
 
-    private static NameError checkName(String requestName) {
-        NameError nameError = new NameError();
+    private static BasicError checkName(String requestName) {
+        BasicError nameError = new BasicError();
         if (requestName == null)
             nameError.setName("Имя указано неверно");
         return nameError;
     }
 
-    private static PasswordError checkPassword(String password) {
-        PasswordError passwordError = new PasswordError();
+    private static BasicError checkPassword(String password) {
+        BasicError passwordError = new BasicError();
         if (password.length() < 6)
             passwordError.setPassword("Пароль короче 6-ти символов");
         return passwordError;
