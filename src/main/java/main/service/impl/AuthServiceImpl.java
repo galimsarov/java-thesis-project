@@ -136,7 +136,7 @@ public class AuthServiceImpl implements AuthService {
         if (user != null) {
             String secretCode = captchaCodeRepository
                     .findSecretByCode(request.getCaptcha());
-            if (!secretCode.equals(request.getCaptcha_secret()))
+            if (secretCode == null)
                 captchaError.setCaptcha("Код с картинки введён неверно");
             if (request.getPassword().length() < 6)
                 passwordError.setPassword("Пароль короче 6-ти символов");
