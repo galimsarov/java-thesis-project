@@ -10,8 +10,18 @@ import main.repository.CaptchaCodeRepository;
 import main.repository.GlobalSettingsRepository;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
-import main.request.*;
-import main.response.*;
+import main.request.others.EmailRequest;
+import main.request.passwords.ChangePasswordRequest;
+import main.request.passwords.LoginRequest;
+import main.request.passwords.RegisterRequest;
+import main.response.ids.AuthUserResp;
+import main.response.others.CaptchaResponse;
+import main.response.passwords.CodePasCapResp;
+import main.response.passwords.EmailNameCapResp;
+import main.response.results.PasswordError;
+import main.response.results.AuthResUserResp;
+import main.response.results.RegisterError;
+import main.response.results.ResultResponse;
 import main.service.AuthService;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,7 +45,7 @@ import java.util.*;
  * Класс AuthServiceImpl
  * Сервисный слой прочих запросов /api/auth/*
  *
- * @version 1.0
+ * @version 1.2
  */
 @Service
 @RequiredArgsConstructor
@@ -55,18 +65,20 @@ public class AuthServiceImpl implements AuthService {
      * Метод проверяет введенные данные и производит авторизацию пользователя
      */
     @Override
-    public BasicResponse login(BasicRequest request) {
+    public ResultResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getE_mail());
-        BasicResponse response = new BasicResponse();
         if (user.getPassword().equals(request.getPassword())) {
-            response = getAuthUserResponse(user);
+            AuthResUserResp response = getAuthUserResponse(user);
             String sessionId = RequestContextHolder
                     .currentRequestAttributes().getSessionId();
             authConfiguration.addAuth(sessionId, user.getId());
+            return response;
         }
-        else
+        else {
+            ResultResponse response = new ResultResponse();
             response.setResult(false);
-        return response;
+            return response;
+        }
     }
 
     /**
@@ -74,7 +86,7 @@ public class AuthServiceImpl implements AuthService {
      * Метод возвращает информацию о текущем авторизованном пользователе
      */
     @Override
-    public BasicResponse check() {
+    public ResultResponse check() {
         String currentSession = RequestContextHolder
                 .currentRequestAttributes().getSessionId();
         if (authConfiguration.getAuths().containsKey(currentSession)) {
@@ -83,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
             return getAuthUserResponse(user);
         }
         else {
-            BasicResponse response = new BasicResponse();
+            ResultResponse response = new ResultResponse();
             response.setResult(false);
             return response;
         }
@@ -96,8 +108,8 @@ public class AuthServiceImpl implements AuthService {
      * восстановление пароля
      */
     @Override
-    public BasicResponse restore(BasicRequest request) {
-        BasicResponse response = new BasicResponse();
+    public ResultResponse restore(EmailRequest request) {
+        ResultResponse response = new ResultResponse();
         User user = userRepository.findByEmail(request.getEmail());
         if (user != null) {
             String output = generateSecret();
@@ -128,30 +140,24 @@ public class AuthServiceImpl implements AuthService {
      * и корректность кодов капчи
      */
     @Override
-    public Object changePassword(BasicRequest request) {
+    public ResultResponse changePassword(ChangePasswordRequest request) {
         User user = userRepository.findByCode(request.getCode());
-        BasicError captchaError = new BasicError();
-        BasicError passwordError = new BasicError();
-        BasicError codeError = new BasicError();
+        CodePasCapResp errors = new CodePasCapResp();
         if (user != null) {
             String secretCode = captchaCodeRepository
                     .findSecretByCode(request.getCaptcha());
             if (secretCode == null)
-                captchaError.setCaptcha("Код с картинки введён неверно");
+                errors.setCaptcha("Код с картинки введён неверно");
             if (request.getPassword().length() < 6)
-                passwordError.setPassword("Пароль короче 6-ти символов");
+                errors.setPassword("Пароль короче 6-ти символов");
         }
         else
-            codeError.setCode("Ссылка для восстановления пароля устарела. " +
+            errors.setCode("Ссылка для восстановления пароля устарела. " +
                     "<a href=\\\"/auth/restore\\\">Запросить ссылку снова</a>");
-        if ((captchaError.getCaptcha() != null) ||
-                (passwordError.getPassword() != null) ||
-                (codeError.getCode() != null)) {
-            BasicError response = new BasicError();
-            BasicError errors = new BasicError();
-            errors.setCaptcha(captchaError.getCaptcha());
-            errors.setPassword(passwordError.getPassword());
-            errors.setCode(codeError.getCode());
+        if ((errors.getCaptcha() != null) ||
+                (errors.getPassword() != null) ||
+                (errors.getCode() != null)) {
+            PasswordError response = new PasswordError();
             response.setResult(false);
             response.setErrors(errors);
             return response;
@@ -159,7 +165,7 @@ public class AuthServiceImpl implements AuthService {
         else {
             user.setPassword(request.getPassword());
             userRepository.saveAndFlush(user);
-            BasicResponse response = new BasicResponse();
+            ResultResponse response = new ResultResponse();
             response.setResult(true);
             return response;
         }
@@ -170,36 +176,27 @@ public class AuthServiceImpl implements AuthService {
      * Метод создаёт пользователя в базе данных, если введённые данные верны
      */
     @Override
-    public Object register(BasicRequest request) {
+    public Object register(RegisterRequest request) {
         String multiUser = globalSettingsRepository.multiUser();
         if (multiUser.equals("NO"))
             return new ResponseEntity(HttpStatus.NOT_FOUND);
         else {
-            BasicError emailError = new BasicError();
+            EmailNameCapResp errors = new EmailNameCapResp();
             if (userRepository.findByEmail(request.getE_mail()) != null)
-                emailError.setEmail("Этот e-mail уже зарегистрирован");
-            BasicError nameError = new BasicError();
+                errors.setEmail("Этот e-mail уже зарегистрирован");
             if (request.getName().length() == 0)
-                nameError.setName("Имя указано неверно");
-            BasicError passwordError = new BasicError();
+                errors.setName("Имя указано неверно");
             if (request.getPassword().length() < 6)
-                passwordError.setPassword("Пароль короче 6-ти символов");
-            BasicError captchaError = new BasicError();
+                errors.setPassword("Пароль короче 6-ти символов");
             if (!request.getCaptcha_secret().equals(
                     captchaCodeRepository.findSecretByCode(request.getCaptcha())))
-                captchaError.setCaptcha("Код с картинки введён неверно");
+                errors.setCaptcha("Код с картинки введён неверно");
 
-            if ((emailError.getEmail() != null) ||
-                    (nameError.getName() != null) ||
-                    (passwordError.getPassword() != null) ||
-                    (captchaError.getCaptcha() != null)) {
-                BasicError response = new BasicError();
-                BasicError errors = new BasicError();
-                errors.setEmail(emailError.getEmail());
-                errors.setName(nameError.getName());
-                errors.setPassword(passwordError.getPassword());
-                errors.setCaptcha(captchaError.getCaptcha());
-
+            if ((errors.getEmail() != null) ||
+                    (errors.getName() != null) ||
+                    (errors.getPassword() != null) ||
+                    (errors.getCaptcha() != null)) {
+                RegisterError response = new RegisterError();;
                 response.setResult(false);
                 response.setErrors(errors);
                 return response;
@@ -213,7 +210,7 @@ public class AuthServiceImpl implements AuthService {
 
                 userRepository.saveAndFlush(user);
 
-                BasicResponse response = new BasicResponse();
+                ResultResponse response = new ResultResponse();
                 response.setResult(true);
 
                 return response;
@@ -228,7 +225,7 @@ public class AuthServiceImpl implements AuthService {
      * 100х35
      */
     @Override
-    public BasicResponse captcha() throws IOException {
+    public CaptchaResponse captcha() throws IOException {
         CaptchaCode captchaCode = new CaptchaCode();
         Cage cage = new GCage();
         OutputStream outputStream = new FileOutputStream(
@@ -259,7 +256,7 @@ public class AuthServiceImpl implements AuthService {
         String imageCode = Base64.getEncoder().encodeToString(
                 FileUtils.readFileToByteArray(newFile));
 
-        BasicResponse response = new BasicResponse();
+        CaptchaResponse response = new CaptchaResponse();
         response.setSecret(secretCode);
         response.setImage("data:image/png;base64, " + imageCode);
 
@@ -277,17 +274,17 @@ public class AuthServiceImpl implements AuthService {
      * списка авторизованных
      */
     @Override
-    public BasicResponse logout() {
+    public ResultResponse logout() {
         String currentSession = RequestContextHolder
                 .currentRequestAttributes().getSessionId();
         authConfiguration.deleteAuth(currentSession);
-        BasicResponse response = new BasicResponse();
+        ResultResponse response = new ResultResponse();
         response.setResult(true);
         return response;
     }
 
-    private BasicResponse getAuthUserResponse(User userFromDB) {
-        BasicResponse user = new BasicResponse();
+    private AuthResUserResp getAuthUserResponse(User userFromDB) {
+        AuthUserResp user = new AuthUserResp();
         user.setId(userFromDB.getId());
         user.setName(userFromDB.getName());
         user.setPhoto(userFromDB.getPhoto());
@@ -304,7 +301,7 @@ public class AuthServiceImpl implements AuthService {
             user.setModerationCount(0);
             user.setSettings(false);
         }
-        BasicResponse response = new BasicResponse();
+        AuthResUserResp response = new AuthResUserResp();
         response.setResult(true);
         response.setUser(user);
         return response;

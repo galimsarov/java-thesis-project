@@ -1,7 +1,11 @@
 package main.controller;
 
-import main.request.BasicRequest;
-import main.response.BasicResponse;
+import main.request.others.EmailRequest;
+import main.request.passwords.ChangePasswordRequest;
+import main.request.passwords.LoginRequest;
+import main.request.passwords.RegisterRequest;
+import main.response.others.CaptchaResponse;
+import main.response.results.ResultResponse;
 import main.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +16,7 @@ import java.io.IOException;
  * Класс ApiAuthController
  * REST-контроллер, обрабатывает все запросы /api/auth/*
  *
- * @version 1.1
+ * @version 1.2
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -26,7 +30,7 @@ public class ApiAuthController {
      * POST запрос /api/auth/login
      */
     @PostMapping("/login")
-    public BasicResponse login(@RequestBody BasicRequest request) {
+    public ResultResponse login(@RequestBody LoginRequest request) {
         return authService.login(request);
     }
 
@@ -36,7 +40,7 @@ public class ApiAuthController {
      * GET запрос /api/auth/check
      */
     @GetMapping("/check")
-    public BasicResponse check() {
+    public ResultResponse check() {
         return authService.check();
     }
 
@@ -48,7 +52,7 @@ public class ApiAuthController {
      * POST запрос /api/auth/restore
      */
     @PostMapping("/restore")
-    public BasicResponse restore(@RequestBody BasicRequest request) {
+    public ResultResponse restore(@RequestBody EmailRequest request) {
         return authService.restore(request);
     }
 
@@ -59,8 +63,8 @@ public class ApiAuthController {
      * POST запрос /api/auth/password
      */
     @PostMapping("/password")
-    public Object changePassword(
-            @RequestBody BasicRequest request) {
+    public ResultResponse changePassword(
+            @RequestBody ChangePasswordRequest request) {
         return authService.changePassword(request);
     }
 
@@ -70,7 +74,7 @@ public class ApiAuthController {
      * POST запрос /api/auth/register
      */
     @PostMapping("/register")
-    public Object register(@RequestBody BasicRequest request) {
+    public Object register(@RequestBody RegisterRequest request) {
         return authService.register(request);
     }
 
@@ -82,7 +86,7 @@ public class ApiAuthController {
      * GET запрос /api/auth/captcha
      */
     @GetMapping("/captcha")
-    public BasicResponse captcha() throws IOException {
+    public CaptchaResponse captcha() throws IOException {
         return authService.captcha();
     }
 
@@ -93,7 +97,7 @@ public class ApiAuthController {
      * GET запрос /api/auth/logout
      */
     @GetMapping("/logout")
-    public BasicResponse logout() {
+    public ResultResponse logout() {
         return authService.logout();
     }
 }

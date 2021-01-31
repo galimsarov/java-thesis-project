@@ -1,4 +1,4 @@
-package main.response;
+package main.response.others;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

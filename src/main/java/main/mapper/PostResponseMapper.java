@@ -1,7 +1,7 @@
 package main.mapper;
 
 import main.model.*;
-import main.response.*;
+import main.response.ids.*;
 import org.mapstruct.Mapper;
 
 import java.util.ArrayList;
@@ -15,12 +15,12 @@ import java.util.regex.Pattern;
  * Класс PostResponseMapper
  * Класс для подготовки объектов для вида, воспринимаемого фронтом
  *
- * @version 1.1
+ * @version 1.2
  */
 @Mapper
 public class PostResponseMapper {
     /**
-     * Метод postToBasicResponse
+     * Метод PostPreview
      * Метод готовит объекты для вывода постов:
      *      - для главной страницы и подразделов "Новые", "Самые обсуждаемые",
      *      "Лучшие" и "Старые"
@@ -35,12 +35,12 @@ public class PostResponseMapper {
      *
      * @param post пост, который нужно преобразовать, к виду PostResponse
      */
-    public BasicResponse postToBasicResponse(Post post) {
-        BasicResponse response = new BasicResponse();
+    public PostPreview postToPostPreview(Post post) {
+        PostPreview response = new PostPreview();
         response.setId(post.getId());
         response.setTimestamp(post.getTime().getTime()/1000);
 
-        BasicResponse user = new BasicResponse();
+        IdNameResp user = new IdNameResp();
         user.setId(post.getUser().getId());
         user.setName(post.getUser().getName());
         response.setUser(user);
@@ -55,20 +55,20 @@ public class PostResponseMapper {
     }
 
     /**
-     * Метод postToSpecificPost
+     * Метод postToPostResponse
      * Метод готовит объекты для вывода конкретного поста для отображения на
      * странице поста, в том числе, список комментариев и тэгов, привязанных
      * к данному посту
      *
      * @param post пост, который нужно преобразовать
      */
-    public BasicResponse postToSpecificPost(Post post) {
-        BasicResponse response = new BasicResponse();
+    public PostResponse postToPostResponse(Post post) {
+        PostResponse response = new PostResponse();
         response.setId(post.getId());
         response.setTimestamp(post.getTime().getTime()/1000);
         response.setActive(post.isActive());
 
-        BasicResponse userDTO = new BasicResponse();
+        IdNameResp userDTO = new IdNameResp();
         userDTO.setId(post.getUser().getId());
         userDTO.setName(post.getUser().getName());
         response.setUser(userDTO);
@@ -89,7 +89,6 @@ public class PostResponseMapper {
         }
         else
             response.setTags(new HashSet<>());
-
         return response;
     }
 
@@ -131,26 +130,26 @@ public class PostResponseMapper {
         return disLikesCount;
     }
 
-    private List<AdditionalResponse> getCommentsResponse
+    private List<CommentResponse> getCommentsResponse
             (List<PostComment> comments) {
-        List<AdditionalResponse> additionalRespons = new ArrayList<>();
+        List<CommentResponse> response = new ArrayList<>();
         for (PostComment comment : comments) {
-                AdditionalResponse response = new AdditionalResponse();
-                response.setId(comment.getId());
-                response.setTimestamp(comment.getTime().getTime()/1000);
-                response.setText(comment.getText());
+                CommentResponse commentResponse = new CommentResponse();
+                commentResponse.setId(comment.getId());
+                commentResponse.setTimestamp(comment.getTime().getTime()/1000);
+                commentResponse.setText(comment.getText());
 
-                UserWithPhotoResponse userWithPhoto =
-                        new UserWithPhotoResponse();
+                IdNamePhotoResp userWithPhoto =
+                        new IdNamePhotoResp();
                 userWithPhoto.setId(comment.getUser().getId());
                 userWithPhoto.setName(comment.getUser().getName());
                 userWithPhoto.setPhoto(comment.getUser().getPhoto());
 
-                response.setUser(userWithPhoto);
+                commentResponse.setUser(userWithPhoto);
                 if (comment.getParentId() != null)
-                    response.setParentId(comment.getParentId());
-                additionalRespons.add(response);
+                    commentResponse.setParentId(comment.getParentId());
+                response.add(commentResponse);
         }
-        return additionalRespons;
+        return response;
     }
 }

@@ -9,9 +9,13 @@ import main.model.Tag;
 import main.model.User;
 import main.model.helper.PostStatus;
 import main.repository.*;
-import main.request.AdditionalRequest;
-import main.request.BasicRequest;
-import main.response.*;
+import main.request.others.PostRequest;
+import main.request.postids.PostIdRequest;
+import main.response.ids.PostPreview;
+import main.response.others.ThePosts;
+import main.response.others.TitleTextResponse;
+import main.response.results.PostError;
+import main.response.results.ResultResponse;
 import main.service.PostService;
 import org.mapstruct.factory.Mappers;
 import org.springframework.data.domain.Page;
@@ -29,7 +33,7 @@ import java.util.*;
  * Класс PostServiceImpl
  * Сервисный слой для работы с постами
  *
- * @version 1.1
+ * @version 1.2
  */
 @Service
 @RequiredArgsConstructor
@@ -50,9 +54,9 @@ public class PostServiceImpl implements PostService {
      * @param mode режим вывода (сортировка): recent, popular, best или early
      */
     @Override
-    public BasicResponse getListOfPostResponse
-    (int offset, int limit, String mode) {
-        List<BasicResponse> posts = new ArrayList<>();
+    public ThePosts getListOfPostResponse
+            (int offset, int limit, String mode) {
+        List<PostPreview> posts = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
         Pageable pageable = PageRequest.of(offset/10, limit);
         Page<Post> postPage;
@@ -74,14 +78,14 @@ public class PostServiceImpl implements PostService {
                         findRecentPosts(pageable);
         }
         for (Post post : postPage) {
-            BasicResponse postForFeed = mapper.postToBasicResponse(post);
+            PostPreview postForFeed = mapper.postToPostPreview(post);
             posts.add(postForFeed);
         }
-        BasicResponse response = new BasicResponse();
+        ThePosts response = new ThePosts();
         response.setCount(postRepository.findCountOfPosts());
         response.setPosts(posts);
         return response;
-        }
+    }
 
     /**
      * Метод searchForPostResponse
@@ -92,23 +96,25 @@ public class PostServiceImpl implements PostService {
      * @param query поисковый запрос
      */
     @Override
-    public BasicResponse searchForPostResponse
-    (int offset, int limit, String query) {
-        BasicResponse response = new BasicResponse();
-        List<BasicResponse> posts = new ArrayList<>();
+    public ThePosts searchForPostResponse
+            (int offset, int limit, String query) {
+        ThePosts response = new ThePosts();
+        List<PostPreview> posts = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper
                 (PostResponseMapper.class);
         Pageable pageable = PageRequest.of(offset/10, limit);
         List<Post> postList = postRepository.
                 searchForPostsByQuery(query, pageable);
         for (Post post : postList) {
-            BasicResponse postDTO = mapper.postToBasicResponse(post);
+            PostPreview postDTO = mapper.postToPostPreview(post);
             posts.add(postDTO);
         }
         response.setCount(postRepository.getCountOfPostsByQuery(query));
         response.setPosts(posts);
         return response;
     }
+
+
 
     /**
      * Метод getPostsByDate
@@ -119,16 +125,16 @@ public class PostServiceImpl implements PostService {
      * @param date дата в формате "2019-10-15"
      */
     @Override
-    public BasicResponse getPostsByDate
-    (int offset, int limit, String date) {
-        BasicResponse response = new BasicResponse();
-        List<BasicResponse> posts = new ArrayList<>();
+    public ThePosts getPostsByDate
+            (int offset, int limit, String date) {
+        ThePosts response = new ThePosts();
+        List<PostPreview> posts = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
         Pageable pageable = PageRequest.of(offset/10, limit);
         List<Post> postList = postRepository.
                 getPostsByDate(dateBefore(date), dateAfter(date), pageable);
         for (Post post : postList) {
-            BasicResponse postDTO = mapper.postToBasicResponse(post);
+            PostPreview postDTO = mapper.postToPostPreview(post);
             posts.add(postDTO);
         }
         response.setCount(postRepository
@@ -146,15 +152,15 @@ public class PostServiceImpl implements PostService {
      * @param tag тэг, по которому нужно вывести все посты
      */
     @Override
-    public BasicResponse getPostsByTag
-    (int offset, int limit, String tag) {
-        BasicResponse response = new BasicResponse();
-        List<BasicResponse> posts = new ArrayList<>();
+    public ThePosts getPostsByTag
+            (int offset, int limit, String tag) {
+        ThePosts response = new ThePosts();
+        List<PostPreview> posts = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
         Pageable pageable = PageRequest.of(offset/10, limit);
         List<Post> postList = postRepository.getPostsByTag(tag, pageable);
         for (Post post : postList) {
-            BasicResponse postDTO = mapper.postToBasicResponse(post);
+            PostPreview postDTO = mapper.postToPostPreview(post);
             posts.add(postDTO);
         }
         response.setCount(postRepository.getCountOfPostsByTag(tag));
@@ -171,10 +177,10 @@ public class PostServiceImpl implements PostService {
      * @param status статус модерации: new, declined или accepted
      */
     @Override
-    public BasicResponse getPostsForModeration
-    (int offset, int limit, String status) {
-        BasicResponse response = new BasicResponse();
-        List<BasicResponse> posts = new ArrayList<>();
+    public ThePosts getPostsForModeration
+            (int offset, int limit, String status) {
+        ThePosts response = new ThePosts();
+        List<PostPreview> posts = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper(PostResponseMapper.class);
         Pageable pageable = PageRequest.of(offset/10, limit);
         List<Post> postList;
@@ -198,7 +204,7 @@ public class PostServiceImpl implements PostService {
                 count = postRepository.getCountOfAcceptedPosts(id);
         }
         for (Post post : postList) {
-            BasicResponse postResponse = mapper.postToBasicResponse(post);
+            PostPreview postResponse = mapper.postToPostPreview(post);
             posts.add(postResponse);
         }
         response.setCount(count);
@@ -216,10 +222,10 @@ public class PostServiceImpl implements PostService {
      *               published
      */
     @Override
-    public BasicResponse getMyPosts
-    (int offset, int limit, String status) {
-        BasicResponse response = new BasicResponse();
-        List<BasicResponse> posts = new ArrayList<>();
+    public ThePosts getMyPosts
+            (int offset, int limit, String status) {
+        ThePosts response = new ThePosts();
+        List<PostPreview> posts = new ArrayList<>();
         PostResponseMapper mapper = Mappers.getMapper
                 (PostResponseMapper.class);
         Pageable pageable = PageRequest.of(offset/10, limit);
@@ -248,7 +254,7 @@ public class PostServiceImpl implements PostService {
                 count = postRepository.getCountOfMyPublishedPosts(id);
         }
         for (Post post : postList) {
-            BasicResponse postResponse = mapper.postToBasicResponse(post);
+            PostPreview postResponse = mapper.postToPostPreview(post);
             posts.add(postResponse);
         }
         response.setCount(count);
@@ -263,15 +269,14 @@ public class PostServiceImpl implements PostService {
      * @param id пост, который мы хотим ищем
      */
     @Override
-    public Object getPost
-    (int id) {
+    public Object getPost(int id) {
         try {
             Post post = postRepository.getOne(id);
             PostResponseMapper mapper = Mappers
                     .getMapper(PostResponseMapper.class);
             post.setViewCount(checkViewCount(post));
             postRepository.saveAndFlush(post);
-            return mapper.postToSpecificPost(post);
+            return mapper.postToPostResponse(post);
         }
         catch (EntityNotFoundException e) {
             return new ResponseEntity(HttpStatus.NOT_FOUND);
@@ -283,11 +288,10 @@ public class PostServiceImpl implements PostService {
      * Метод отправляет данные поста, которые пользователь ввёл в форму
      */
     @Override
-    public BasicResponse addPost
-    (BasicRequest request) {
-        BasicResponse response = checkPostData(request);
-        if (!response.isResult())
-            return response;
+    public Object addPost(PostRequest request) {
+        PostError error = checkPostData(request);
+        if (!error.isResult())
+            return error;
         if (request.getTimestamp() < (new Date()).getTime())
             request.setTimestamp((new Date()).getTime());
         String currentSession = RequestContextHolder
@@ -303,6 +307,9 @@ public class PostServiceImpl implements PostService {
             post.setActive(true);
         }
         postRepository.saveAndFlush(post);
+
+        ResultResponse response = new ResultResponse();
+        response.setResult(true);
         return response;
     }
 
@@ -313,11 +320,10 @@ public class PostServiceImpl implements PostService {
      * @param id поста, который мы хотим изменить
      */
     @Override
-    public BasicResponse editPost
-    (int id, BasicRequest request) {
-        BasicResponse response = checkPostData(request);
-        if (!response.isResult())
-            return response;
+    public Object editPost(int id, PostRequest request) {
+        PostError error = checkPostData(request);
+        if (!error.isResult())
+            return error;
         if (request.getTimestamp() < (new Date()).getTime())
             request.setTimestamp((new Date()).getTime());
         String currentSession = RequestContextHolder
@@ -330,6 +336,9 @@ public class PostServiceImpl implements PostService {
         if (user.getId() == post.getUser().getId())
             post.setModerationStatus(PostStatus.NEW);
         postRepository.saveAndFlush(post);
+
+        ResultResponse response = new ResultResponse();
+        response.setResult(true);
         return response;
     }
 
@@ -339,10 +348,10 @@ public class PostServiceImpl implements PostService {
      * пользователя
      */
     @Override
-    public BasicResponse like(AdditionalRequest request) {
+    public ResultResponse like(PostIdRequest request) {
         String currentSession = RequestContextHolder
                 .currentRequestAttributes().getSessionId();
-        BasicResponse response = new BasicResponse();
+        ResultResponse response = new ResultResponse();
         response.setResult(false);
         if (authConfiguration.getAuths().get(currentSession) != null) {
             int userId = authConfiguration.getAuths().get(currentSession);
@@ -375,11 +384,12 @@ public class PostServiceImpl implements PostService {
      * Метод сохраняет в таблицу post_votes дизлайк текущего авторизованного
      * пользователя
      */
+
     @Override
-    public BasicResponse dislike(AdditionalRequest request) {
+    public ResultResponse dislike(PostIdRequest request) {
         String currentSession = RequestContextHolder
                 .currentRequestAttributes().getSessionId();
-        BasicResponse response = new BasicResponse();
+        ResultResponse response = new ResultResponse();
         response.setResult(false);
         if (authConfiguration.getAuths().get(currentSession) != null) {
             int userId = authConfiguration.getAuths().get(currentSession);
@@ -433,33 +443,34 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-    private BasicResponse checkPostData(BasicRequest request) {
-        BasicResponse response = new BasicResponse();
+    private PostError checkPostData(PostRequest request) {
+        PostError response = new PostError();
         response.setResult(true);
-        BasicResponse errors = new BasicResponse();
+        TitleTextResponse errors = new TitleTextResponse();
         if ((request.getTitle().length() == 0) ||
                 (request.getTitle() == null)) {
             response.setResult(false);
             errors.setTitle("Заголовок не установлен");
         }
         else
-            if (request.getTitle().length() < 3) {
-                response.setResult(false);
-                errors.setTitle("Текст заголовка слишком короткий");
-            }
+        if (request.getTitle().length() < 3) {
+            response.setResult(false);
+            errors.setTitle("Текст заголовка слишком короткий");
+        }
         if (request.getText().length() == 0) {
             response.setResult(false);
             errors.setText("Публикация не установлена");
         }
         else
-            if (request.getText().length() < 50) {
-                response.setResult(false);
-                errors.setText("Текст публикации слишком короткий");
-            }
+        if (request.getText().length() < 50) {
+            response.setResult(false);
+            errors.setText("Текст публикации слишком короткий");
+        }
+        response.setErrors(errors);
         return response;
     }
 
-    private Post createNewPost(BasicRequest request, Post post) {
+    private Post createNewPost(PostRequest request, Post post) {
         post.setActive(request.getActive() == 1);
         post.setTime(new Date(request.getTimestamp()));
         post.setTitle(request.getTitle());

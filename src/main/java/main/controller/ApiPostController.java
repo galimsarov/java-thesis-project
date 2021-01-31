@@ -1,8 +1,9 @@
 package main.controller;
 
-import main.request.AdditionalRequest;
-import main.request.BasicRequest;
-import main.response.BasicResponse;
+import main.request.others.PostRequest;
+import main.request.postids.PostIdRequest;
+import main.response.others.ThePosts;
+import main.response.results.ResultResponse;
 import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
  * Класс ApiPostController
  * REST-контроллер, обрабатывает все запросы /api/post/*
  *
- * @version 1.1
+ * @version 1.2
  */
 
 @RestController
@@ -31,7 +32,7 @@ public class ApiPostController {
      *             другие значения не были указаны
      */
     @GetMapping
-    public BasicResponse listOfPosts(
+    public ThePosts listOfPosts(
             @RequestParam int offset,
             @RequestParam int limit,
             @RequestParam String mode) {
@@ -48,7 +49,7 @@ public class ApiPostController {
      * @param query поисковый запрос
      */
     @GetMapping("/search")
-    public BasicResponse searchForPosts(
+    public ThePosts searchForPosts(
             @RequestParam int offset,
             @RequestParam int limit,
             @RequestParam String query) {
@@ -65,7 +66,7 @@ public class ApiPostController {
      * @param date дата в формате "2019-10-15"
      */
     @GetMapping("/byDate")
-    public BasicResponse postsByDate(
+    public ThePosts postsByDate(
             @RequestParam int offset,
             @RequestParam int limit,
             @RequestParam String date) {
@@ -82,7 +83,7 @@ public class ApiPostController {
      * @param tag тэг, по которому нужно вывести все посты
      */
     @GetMapping("/byTag")
-    public BasicResponse postsByTag(
+    public ThePosts postsByTag(
             @RequestParam int offset,
             @RequestParam int limit,
             @RequestParam String tag) {
@@ -99,7 +100,7 @@ public class ApiPostController {
      * @param status статус модерации: new, declined или accepted
      */
     @GetMapping("/moderation")
-    public BasicResponse listOfPostsForModeration(
+    public ThePosts listOfPostsForModeration(
             @RequestParam int offset,
             @RequestParam int limit,
             @RequestParam String status) {
@@ -116,7 +117,7 @@ public class ApiPostController {
      * @param status статус модерации: inactive, pending, declined или published
      */
     @GetMapping("/my")
-    public BasicResponse listOfMyPosts(
+    public ThePosts listOfMyPosts(
             @RequestParam int offset,
             @RequestParam int limit,
             @RequestParam String status) {
@@ -142,8 +143,7 @@ public class ApiPostController {
      * POST запрос /api/post
      */
     @PostMapping
-    public BasicResponse addPost(
-            @RequestBody BasicRequest request) {
+    public Object addPost(@RequestBody PostRequest request) {
         return postService.addPost(request);
     }
 
@@ -155,8 +155,8 @@ public class ApiPostController {
      * @param id поста, который мы хотим изменить
      */
     @PutMapping("/{id}")
-    public BasicResponse editPost(@PathVariable(value = "id") int id,
-                                  @RequestBody BasicRequest request) {
+    public Object editPost(@PathVariable(value = "id") int id,
+                           @RequestBody PostRequest request) {
         return postService.editPost(id, request);
     }
 
@@ -167,7 +167,7 @@ public class ApiPostController {
      * POST запрос /api/post/like
      */
     @PostMapping("/like")
-    public BasicResponse like(@RequestBody AdditionalRequest request) {
+    public ResultResponse like(@RequestBody PostIdRequest request) {
         return postService.like(request);
     }
 
@@ -178,7 +178,7 @@ public class ApiPostController {
      * POST запрос /api/post/dislike
      */
     @PostMapping("/dislike")
-    public BasicResponse dislike(@RequestBody AdditionalRequest request) {
+    public ResultResponse dislike(@RequestBody PostIdRequest request) {
         return postService.dislike(request);
     }
 }

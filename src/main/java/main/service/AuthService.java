@@ -1,16 +1,20 @@
 package main.service;
 
-import main.request.BasicRequest;
-import main.response.BasicResponse;
+import main.request.others.EmailRequest;
+import main.request.passwords.ChangePasswordRequest;
+import main.request.passwords.LoginRequest;
+import main.request.passwords.RegisterRequest;
+import main.response.others.CaptchaResponse;
+import main.response.results.ResultResponse;
 
 import java.io.IOException;
 
 public interface AuthService {
-    BasicResponse login(BasicRequest authRequest);
-    BasicResponse check();
-    BasicResponse restore(BasicRequest emailRequest);
-    Object changePassword(BasicRequest request);
-    Object register(BasicRequest request);
-    BasicResponse captcha() throws IOException;
-    BasicResponse logout();
+    ResultResponse login(LoginRequest authRequest);
+    ResultResponse check();
+    ResultResponse restore(EmailRequest emailRequest);
+    ResultResponse changePassword(ChangePasswordRequest request);
+    Object register(RegisterRequest request);
+    CaptchaResponse captcha() throws IOException;
+    ResultResponse logout();
 }

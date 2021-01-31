@@ -1,7 +1,11 @@
 package main.controller;
 
-import main.request.*;
-import main.response.*;
+import main.request.others.ProfileRequest;
+import main.request.others.SettingsRequest;
+import main.request.postids.CommentRequest;
+import main.request.postids.PostModerationRequest;
+import main.response.others.*;
+import main.response.results.ResultResponse;
 import main.service.GeneralService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +17,7 @@ import java.io.IOException;
  * Класс ApiGeneralController
  * REST-контроллер для прочих запросов к API
  *
- * @version 1.0
+ * @version 1.2
  */
 @RestController
 @RequestMapping("/api")
@@ -39,8 +43,7 @@ public class ApiGeneralController {
      * POST запрос /api/image
      */
     @PostMapping(value = "/image", consumes = "multipart/form-data")
-    public Object imageUpload(
-            @RequestPart(value = "image") MultipartFile file)
+    public Object imageUpload(@RequestPart(value = "image") MultipartFile file)
             throws IOException {
         return generalService.imageUpload(file);
     }
@@ -51,7 +54,7 @@ public class ApiGeneralController {
      * POST запрос /api/comment
      */
     @PostMapping("/comment")
-    public BasicResponse sendComment(@RequestBody BasicRequest request) {
+    public Object sendComment(@RequestBody CommentRequest request) {
         return generalService.sendComment(request);
     }
 
@@ -64,7 +67,7 @@ public class ApiGeneralController {
      * @param query часть тэга или тэг, м.б. не задан, м.б. пустым
      */
     @GetMapping("/tag")
-    public AdditionalResponse getListOfTags(
+    public TagsResponse getListOfTags(
             @RequestParam(required = false) String query) {
         return generalService.getListOfTags(query);
     }
@@ -76,8 +79,8 @@ public class ApiGeneralController {
      * POST запрос /api/moderation
      */
     @PostMapping("/moderation")
-    public BasicResponse postModeration(
-            @RequestBody BasicRequest request) {
+    public ResultResponse postModeration(
+            @RequestBody PostModerationRequest request) {
         return generalService.postModeration(request);
     }
 
@@ -91,7 +94,7 @@ public class ApiGeneralController {
      *             за текущий год
      */
     @GetMapping("/calendar")
-    public AdditionalResponse numberOfPosts(
+    public YearsPostsResponse numberOfPosts(
             @RequestParam(required = false) Integer year) {
         return generalService.numberOfPosts(year);
     }
@@ -103,8 +106,7 @@ public class ApiGeneralController {
      * POST запрос /api/profile/my
      */
     @PostMapping(value = "/profile/my", consumes = "application/json")
-    public Object editProfile(
-            @RequestBody BasicRequest request) {
+    public ResultResponse editProfile(@RequestBody ProfileRequest request) {
         return generalService.editProfile(request);
     }
 
@@ -115,8 +117,8 @@ public class ApiGeneralController {
      * POST запрос /api/profile/my
      */
     @PostMapping("/profile/my")
-    public Object editProfileWithPhoto(
-            @ModelAttribute BasicRequest request)
+    public ResultResponse editProfileWithPhoto(
+            @ModelAttribute ProfileRequest request)
             throws IOException {
         return generalService.editProfileWithPhoto(request);
     }
@@ -127,7 +129,7 @@ public class ApiGeneralController {
      * GET запрос /api/statistics/my
      */
     @GetMapping("/statistics/my")
-    public BasicResponse myStatistics() {
+    public StatisticsResponse myStatistics() {
         return generalService.myStatistics();
     }
 
@@ -147,7 +149,7 @@ public class ApiGeneralController {
      * GET запрос /api/settings
      */
     @GetMapping("/settings")
-    public BasicResponse getSettings() {
+    public SettingsResponse getSettings() {
         return generalService.getSettings();
     }
 
@@ -158,7 +160,7 @@ public class ApiGeneralController {
      * PUT запрос /api/settings
      */
     @PutMapping("/settings")
-    public void putSettings(@RequestBody AdditionalRequest request) {
+    public void putSettings(@RequestBody SettingsRequest request) {
         generalService.putSettings(request);
     }
 }
