@@ -29,4 +29,12 @@ public interface TagRepository extends JpaRepository<Tag, Integer> {
      */
     @Query(value = "SELECT * FROM tags where name=:query", nativeQuery = true)
     Tag findTagByName(@Param("query") String name);
+
+    /**
+     * Метод findByName
+     * Возвращает имена тэгов, начинающихся с указанной строки
+     */
+    @Query(value = "select name from tags where name like concat(:query,'%')",
+            nativeQuery = true)
+    List<String> findByName(@Param("query") String query);
 }

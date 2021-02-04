@@ -2,15 +2,9 @@ package main.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import main.config.AuthConfiguration;
-import main.model.GlobalSetting;
-import main.model.Post;
-import main.model.PostComment;
-import main.model.User;
+import main.model.*;
 import main.model.helper.PostStatus;
-import main.repository.GlobalSettingsRepository;
-import main.repository.PostCommentRepository;
-import main.repository.PostRepository;
-import main.repository.UserRepository;
+import main.repository.*;
 import main.request.others.ProfileRequest;
 import main.request.others.SettingsRequest;
 import main.request.postids.CommentRequest;
@@ -54,6 +48,8 @@ public class GeneralServiceImpl implements GeneralService {
     private final PostCommentRepository commentRepository;
     private final GlobalSettingsRepository globalSettingsRepository;
     private final AuthConfiguration authConfiguration;
+    private final Tag2PostRepository tag2PostRepository;
+    private final TagRepository tagRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -165,49 +161,89 @@ public class GeneralServiceImpl implements GeneralService {
      *
      * @param query часть тэга или тэг, м.б. не задан, м.б. пустым
      */
+//    @Override
+//    public TagsResponse getListOfTags(String query) {
+//        if (query == null)
+//            query = "";
+//        // TODO: попробуй убрать прямой запрос
+//        Query nativeQuery = entityManager.createNativeQuery
+//                ("select name, count(name) from " +
+//                        "(select tags.name, new_tag2posts.postid from tags " +
+//                        "join (select tag2post.tag_id, new_posts.id " +
+//                        "as postid from tag2post join (select * from posts " +
+//                        "where is_active = 1 and moderation_status = " +
+//                        "'ACCEPTED' and time < current_time()) as " +
+//                        "new_posts where tag2post.post_id = new_posts.id) " +
+//                        "as new_tag2posts on tags.id = new_tag2posts.tag_id) " +
+//                        "as ready_tags where name like concat(?1,'%') " +
+//                        "group by name");
+//        nativeQuery.setParameter(1, query);
+//        List<Object[]> listOfArrays = nativeQuery.getResultList();
+//        int totalPosts = postRepository.getActivePosts();
+//
+//        TagsResponse response = new TagsResponse();
+//        List<NameWeightResp> tags = new ArrayList<>();
+//
+//        BigInteger currentBig = new BigInteger(listOfArrays
+//                .get(0)[1].toString());
+//        int currentCount = currentBig.intValue();
+//        float maxWeight = (float)(currentCount) / totalPosts;
+//
+//        for (Object[] objects : listOfArrays) {
+//            NameWeightResp tag = new NameWeightResp();
+//            currentBig = new BigInteger(objects[1].toString());
+//            currentCount = currentBig.intValue();
+//            float currentWeight = (float) (currentCount) / totalPosts;
+//            if (currentWeight > maxWeight)
+//                maxWeight = currentWeight;
+//            tag.setName(objects[0].toString());
+//            tag.setWeight(currentWeight);
+//            tags.add(tag);
+//        }
+//        for (NameWeightResp tagWithWeight : tags) {
+//            tagWithWeight.setWeight
+//                    (tagWithWeight.getWeight()/maxWeight);
+//        }
+//        response.setTags(tags);
+//        return response;
+//    }
     @Override
     public TagsResponse getListOfTags(String query) {
+        List<String> tagList;
         if (query == null)
-            query = "";
-        // TODO: попробуй убрать прямой запрос
-        Query nativeQuery = entityManager.createNativeQuery
-                ("select name, count(name) from " +
-                        "(select tags.name, new_tag2posts.postid from tags " +
-                        "join (select tag2post.tag_id, new_posts.id " +
-                        "as postid from tag2post join (select * from posts " +
-                        "where is_active = 1 and moderation_status = " +
-                        "'ACCEPTED' and time < current_time()) as " +
-                        "new_posts where tag2post.post_id = new_posts.id) " +
-                        "as new_tag2posts on tags.id = new_tag2posts.tag_id) " +
-                        "as ready_tags where name like concat(?1,'%') " +
-                        "group by name");
-        nativeQuery.setParameter(1, query);
-        List<Object[]> listOfArrays = nativeQuery.getResultList();
-        int totalPosts = postRepository.getActivePosts();
-
-        TagsResponse response = new TagsResponse();
+            tagList = tagRepository.findNamesOfTags();
+        else
+            tagList = tagRepository.findByName(query);
+        List<TagToPost> tagToPostList = tag2PostRepository
+                .findActiveTagToPosts();
+        Map<String, Float> fullMap = new HashMap<>();
+        for (TagToPost tagToPost : tagToPostList) {
+            String key = tagRepository.getOne(tagToPost.getTagId()).getName();
+            float newValue;
+            if (fullMap.containsKey(key))
+                newValue = fullMap.get(key) + 1;
+            else
+                newValue = 1;
+            fullMap.put(key, newValue);
+        }
+        float maxWeigh = 0;
         List<NameWeightResp> tags = new ArrayList<>();
-
-        BigInteger currentBig = new BigInteger(listOfArrays
-                .get(0)[1].toString());
-        int currentCount = currentBig.intValue();
-        float maxWeight = (float)(currentCount) / totalPosts;
-
-        for (Object[] objects : listOfArrays) {
-            NameWeightResp tag = new NameWeightResp();
-            currentBig = new BigInteger(objects[1].toString());
-            currentCount = currentBig.intValue();
-            float currentWeight = (float) (currentCount) / totalPosts;
-            if (currentWeight > maxWeight)
-                maxWeight = currentWeight;
-            tag.setName(objects[0].toString());
-            tag.setWeight(currentWeight);
-            tags.add(tag);
+        for (String key : fullMap.keySet()) {
+            float value = fullMap.get(key) / fullMap.size();
+            if (value > maxWeigh)
+                maxWeigh = value;
+            if (tagList.contains(key)) {
+                NameWeightResp tag = new NameWeightResp();
+                tag.setName(key);
+                tag.setWeight(value);
+                tags.add(tag);
+            }
         }
-        for (NameWeightResp tagWithWeight : tags) {
-            tagWithWeight.setWeight
-                    (tagWithWeight.getWeight()/maxWeight);
+        for (NameWeightResp current : tags) {
+            float newWeight = current.getWeight()/maxWeigh;
+            current.setWeight(newWeight);
         }
+        TagsResponse response = new TagsResponse();
         response.setTags(tags);
         return response;
     }
@@ -258,26 +294,59 @@ public class GeneralServiceImpl implements GeneralService {
      * @param year год в виде четырёхзначного числа, если не передан -
      *             возвращать за текущий год
      */
+//    @Override
+//    public YearsPostsResponse numberOfPosts(Integer year) {
+//        // TODO: попробуй прямой запрос
+//        Query nativeQuery = entityManager.createNativeQuery
+//                ("select distinct substr(time, 1, 4) as year from posts " +
+//                        "order by year asc");
+//        List<Object> yearObjects = nativeQuery.getResultList();
+//        List<Integer> years = new ArrayList<>();
+//
+//        for (Object current : yearObjects) {
+//            BigInteger currentBig = new BigInteger(current.toString());
+//            years.add(currentBig.intValue());
+//        }
+//
+//        // TODO: попробуй прямой запрос
+//        nativeQuery = entityManager.createNativeQuery
+//                ("select days.day, count(days.day) from (select " +
+//                        "substr(time, 1, 10) as day from posts where " +
+//                        "substr(time, 1, 4) like ?1) as days " +
+//                        "group by days.day");
+//        String parameter;
+//        if (year == null) {
+//            int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+//            parameter = String.valueOf(currentYear);
+//        }
+//        else
+//            parameter = String.valueOf(year);
+//        nativeQuery.setParameter(1, parameter);
+//        List<Object[]> postObjects = nativeQuery.getResultList();
+//        Map<String, Integer> posts = new HashMap<>();
+//
+//        for (Object[] current : postObjects) {
+//            String key = current[0].toString();
+//            BigInteger bigIntValue = new BigInteger(current[1].toString());
+//            int value = bigIntValue.intValue();
+//            posts.put(key, value);
+//        }
+//
+//        YearsPostsResponse response = new YearsPostsResponse();
+//        response.setYears(years);
+//        response.setPosts(posts);
+//
+//        return response;
+//    }
     @Override
     public YearsPostsResponse numberOfPosts(Integer year) {
-        // TODO: попробуй прямой запрос
-        Query nativeQuery = entityManager.createNativeQuery
-                ("select distinct substr(time, 1, 4) as year from posts " +
-                        "order by year asc");
-        List<Object> yearObjects = nativeQuery.getResultList();
-        List<Integer> years = new ArrayList<>();
-
-        for (Object current : yearObjects) {
-            BigInteger currentBig = new BigInteger(current.toString());
-            years.add(currentBig.intValue());
+        List<Post> postList = postRepository.findAll();
+        Set<Integer> years = new TreeSet<>();
+        for (Post post : postList) {
+            int currentYear =
+                    Integer.parseInt(post.getTime().toString().substring(0, 4));
+            years.add(currentYear);
         }
-
-        // TODO: попробуй прямой запрос
-        nativeQuery = entityManager.createNativeQuery
-                ("select days.day, count(days.day) from (select " +
-                        "substr(time, 1, 10) as day from posts where " +
-                        "substr(time, 1, 4) like ?1) as days " +
-                        "group by days.day");
         String parameter;
         if (year == null) {
             int currentYear = Calendar.getInstance().get(Calendar.YEAR);
@@ -285,17 +354,16 @@ public class GeneralServiceImpl implements GeneralService {
         }
         else
             parameter = String.valueOf(year);
-        nativeQuery.setParameter(1, parameter);
-        List<Object[]> postObjects = nativeQuery.getResultList();
+        List<String> allDays = postRepository.getPostsForTheYear(parameter);
         Map<String, Integer> posts = new HashMap<>();
-
-        for (Object[] current : postObjects) {
-            String key = current[0].toString();
-            BigInteger bigIntValue = new BigInteger(current[1].toString());
-            int value = bigIntValue.intValue();
-            posts.put(key, value);
+        for (String day : allDays) {
+            int value;
+            if (posts.containsKey(day))
+                value = posts.get(day) + 1;
+            else
+                value = 1;
+            posts.put(day, value);
         }
-
         YearsPostsResponse response = new YearsPostsResponse();
         response.setYears(years);
         response.setPosts(posts);

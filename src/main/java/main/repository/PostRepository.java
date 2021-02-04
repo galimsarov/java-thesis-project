@@ -495,4 +495,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             "moderation_status = 'ACCEPTED' and time < current_time()",
             nativeQuery = true)
     Date getFirstPost();
+
+    @Query(value = "select substr(time, 1, 10) as day from posts where " +
+            "substr(time, 1, 4) like :query", nativeQuery = true)
+    List<String> getPostsForTheYear(@Param("query") String year);
 }
