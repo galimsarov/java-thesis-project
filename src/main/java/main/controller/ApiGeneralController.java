@@ -1,11 +1,11 @@
 package main.controller;
 
-import main.request.others.ProfileRequest;
-import main.request.others.SettingsRequest;
-import main.request.postids.CommentRequest;
-import main.request.postids.PostModerationRequest;
-import main.response.others.*;
-import main.response.results.ResultResponse;
+import main.model.request.others.ProfileRequest;
+import main.model.request.others.SettingsRequest;
+import main.model.request.postids.CommentRequest;
+import main.model.request.postids.PostModerationRequest;
+import main.model.response.others.*;
+import main.model.response.results.ResultResponse;
 import main.service.GeneralService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;

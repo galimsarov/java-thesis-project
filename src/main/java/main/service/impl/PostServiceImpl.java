@@ -2,20 +2,20 @@ package main.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import main.config.AuthConfiguration;
-import main.mapper.PostResponseMapper;
+import main.model.response.results.Error;
+import main.service.PostResponseMapper;
 import main.model.Post;
 import main.model.PostVote;
 import main.model.Tag;
 import main.model.User;
 import main.model.helper.PostStatus;
 import main.repository.*;
-import main.request.others.PostRequest;
-import main.request.postids.PostIdRequest;
-import main.response.ids.PostPreview;
-import main.response.others.ThePosts;
-import main.response.others.TitleTextResponse;
-import main.response.results.PostError;
-import main.response.results.ResultResponse;
+import main.model.request.others.PostRequest;
+import main.model.request.postids.PostIdRequest;
+import main.model.response.ids.PostPreview;
+import main.model.response.others.ThePosts;
+import main.model.response.others.TitleTextResponse;
+import main.model.response.results.ResultResponse;
 import main.service.PostService;
 import org.mapstruct.factory.Mappers;
 import org.springframework.data.domain.Page;
@@ -113,8 +113,6 @@ public class PostServiceImpl implements PostService {
         response.setPosts(posts);
         return response;
     }
-
-
 
     /**
      * Метод getPostsByDate
@@ -289,7 +287,7 @@ public class PostServiceImpl implements PostService {
      */
     @Override
     public Object addPost(PostRequest request) {
-        PostError error = checkPostData(request);
+        Error error = checkPostData(request);
         if (!error.isResult())
             return error;
         if (request.getTimestamp() < (new Date()).getTime())
@@ -321,7 +319,7 @@ public class PostServiceImpl implements PostService {
      */
     @Override
     public Object editPost(int id, PostRequest request) {
-        PostError error = checkPostData(request);
+        Error error = checkPostData(request);
         if (!error.isResult())
             return error;
         if (request.getTimestamp() < (new Date()).getTime())
@@ -443,8 +441,8 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-    private PostError checkPostData(PostRequest request) {
-        PostError response = new PostError();
+    private Error checkPostData(PostRequest request) {
+        Error response = new Error();
         response.setResult(true);
         TitleTextResponse errors = new TitleTextResponse();
         if ((request.getTitle().length() == 0) ||

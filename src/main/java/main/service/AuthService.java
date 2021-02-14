@@ -1,11 +1,11 @@
 package main.service;
 
-import main.request.others.EmailRequest;
-import main.request.passwords.ChangePasswordRequest;
-import main.request.passwords.LoginRequest;
-import main.request.passwords.RegisterRequest;
-import main.response.others.CaptchaResponse;
-import main.response.results.ResultResponse;
+import main.model.request.others.EmailRequest;
+import main.model.request.passwords.ChangePasswordRequest;
+import main.model.request.passwords.LoginRequest;
+import main.model.request.passwords.RegisterRequest;
+import main.model.response.others.CaptchaResponse;
+import main.model.response.results.ResultResponse;
 
 import java.io.IOException;
 

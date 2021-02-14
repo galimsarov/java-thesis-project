@@ -1,9 +1,9 @@
 package main.controller;
 
-import main.request.others.PostRequest;
-import main.request.postids.PostIdRequest;
-import main.response.others.ThePosts;
-import main.response.results.ResultResponse;
+import main.model.request.others.PostRequest;
+import main.model.request.postids.PostIdRequest;
+import main.model.response.others.ThePosts;
+import main.model.response.results.ResultResponse;
 import main.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;

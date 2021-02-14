@@ -1,5 +1,7 @@
 package main.mapper;
 
+import main.service.PostResponseMapper;
+
 import javax.annotation.processing.Generated;
 
 @Generated(

@@ -4,18 +4,16 @@ import lombok.RequiredArgsConstructor;
 import main.config.AuthConfiguration;
 import main.model.*;
 import main.model.helper.PostStatus;
+import main.model.response.results.Error;
 import main.repository.*;
-import main.request.others.ProfileRequest;
-import main.request.others.SettingsRequest;
-import main.request.postids.CommentRequest;
-import main.request.postids.PostModerationRequest;
-import main.response.ids.IdResponse;
-import main.response.others.*;
-import main.response.passwords.EmailNamePhotoResp;
-import main.response.results.CommentError;
-import main.response.results.ImageError;
-import main.response.results.ProfileError;
-import main.response.results.ResultResponse;
+import main.model.request.others.ProfileRequest;
+import main.model.request.others.SettingsRequest;
+import main.model.request.postids.CommentRequest;
+import main.model.request.postids.PostModerationRequest;
+import main.model.response.ids.IdResponse;
+import main.model.response.others.*;
+import main.model.response.passwords.EmailNamePhotoResp;
+import main.model.response.results.ResultResponse;
 import main.service.GeneralService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +27,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -70,7 +67,7 @@ public class GeneralServiceImpl implements GeneralService {
     @Override
     public Object imageUpload(MultipartFile file) throws IOException {
         String response = null;
-        ImageError errorResponse = new ImageError();
+        Error errorResponse = new Error();
         errorResponse.setResult(false);
         ImageResponse errors = new ImageResponse();
         if (!file.getOriginalFilename().endsWith("jpg") &&
@@ -117,7 +114,7 @@ public class GeneralServiceImpl implements GeneralService {
     @Override
     public Object sendComment(CommentRequest request) {
         if (request.getText().length() < 3) {
-            CommentError response = new CommentError();
+            Error response = new Error();
             TextResponse errors = new TextResponse();
             if (request.getText().length() == 0)
                 errors.setText("Комментарий не установлен");
@@ -161,52 +158,6 @@ public class GeneralServiceImpl implements GeneralService {
      *
      * @param query часть тэга или тэг, м.б. не задан, м.б. пустым
      */
-//    @Override
-//    public TagsResponse getListOfTags(String query) {
-//        if (query == null)
-//            query = "";
-//        // TODO: попробуй убрать прямой запрос
-//        Query nativeQuery = entityManager.createNativeQuery
-//                ("select name, count(name) from " +
-//                        "(select tags.name, new_tag2posts.postid from tags " +
-//                        "join (select tag2post.tag_id, new_posts.id " +
-//                        "as postid from tag2post join (select * from posts " +
-//                        "where is_active = 1 and moderation_status = " +
-//                        "'ACCEPTED' and time < current_time()) as " +
-//                        "new_posts where tag2post.post_id = new_posts.id) " +
-//                        "as new_tag2posts on tags.id = new_tag2posts.tag_id) " +
-//                        "as ready_tags where name like concat(?1,'%') " +
-//                        "group by name");
-//        nativeQuery.setParameter(1, query);
-//        List<Object[]> listOfArrays = nativeQuery.getResultList();
-//        int totalPosts = postRepository.getActivePosts();
-//
-//        TagsResponse response = new TagsResponse();
-//        List<NameWeightResp> tags = new ArrayList<>();
-//
-//        BigInteger currentBig = new BigInteger(listOfArrays
-//                .get(0)[1].toString());
-//        int currentCount = currentBig.intValue();
-//        float maxWeight = (float)(currentCount) / totalPosts;
-//
-//        for (Object[] objects : listOfArrays) {
-//            NameWeightResp tag = new NameWeightResp();
-//            currentBig = new BigInteger(objects[1].toString());
-//            currentCount = currentBig.intValue();
-//            float currentWeight = (float) (currentCount) / totalPosts;
-//            if (currentWeight > maxWeight)
-//                maxWeight = currentWeight;
-//            tag.setName(objects[0].toString());
-//            tag.setWeight(currentWeight);
-//            tags.add(tag);
-//        }
-//        for (NameWeightResp tagWithWeight : tags) {
-//            tagWithWeight.setWeight
-//                    (tagWithWeight.getWeight()/maxWeight);
-//        }
-//        response.setTags(tags);
-//        return response;
-//    }
     @Override
     public TagsResponse getListOfTags(String query) {
         List<String> tagList;
@@ -294,50 +245,6 @@ public class GeneralServiceImpl implements GeneralService {
      * @param year год в виде четырёхзначного числа, если не передан -
      *             возвращать за текущий год
      */
-//    @Override
-//    public YearsPostsResponse numberOfPosts(Integer year) {
-//        // TODO: попробуй прямой запрос
-//        Query nativeQuery = entityManager.createNativeQuery
-//                ("select distinct substr(time, 1, 4) as year from posts " +
-//                        "order by year asc");
-//        List<Object> yearObjects = nativeQuery.getResultList();
-//        List<Integer> years = new ArrayList<>();
-//
-//        for (Object current : yearObjects) {
-//            BigInteger currentBig = new BigInteger(current.toString());
-//            years.add(currentBig.intValue());
-//        }
-//
-//        // TODO: попробуй прямой запрос
-//        nativeQuery = entityManager.createNativeQuery
-//                ("select days.day, count(days.day) from (select " +
-//                        "substr(time, 1, 10) as day from posts where " +
-//                        "substr(time, 1, 4) like ?1) as days " +
-//                        "group by days.day");
-//        String parameter;
-//        if (year == null) {
-//            int currentYear = Calendar.getInstance().get(Calendar.YEAR);
-//            parameter = String.valueOf(currentYear);
-//        }
-//        else
-//            parameter = String.valueOf(year);
-//        nativeQuery.setParameter(1, parameter);
-//        List<Object[]> postObjects = nativeQuery.getResultList();
-//        Map<String, Integer> posts = new HashMap<>();
-//
-//        for (Object[] current : postObjects) {
-//            String key = current[0].toString();
-//            BigInteger bigIntValue = new BigInteger(current[1].toString());
-//            int value = bigIntValue.intValue();
-//            posts.put(key, value);
-//        }
-//
-//        YearsPostsResponse response = new YearsPostsResponse();
-//        response.setYears(years);
-//        response.setPosts(posts);
-//
-//        return response;
-//    }
     @Override
     public YearsPostsResponse numberOfPosts(Integer year) {
         List<Post> postList = postRepository.findAll();
@@ -384,7 +291,7 @@ public class GeneralServiceImpl implements GeneralService {
         if ((errors.getEmail() != null) ||
                 (errors.getName() != null) ||
                 (errors.getPassword() != null)) {
-            ProfileError response = new ProfileError();
+            Error response = new Error();
             response.setErrors(errors);
             return response;
         }
@@ -417,7 +324,7 @@ public class GeneralServiceImpl implements GeneralService {
                 (errors.getName() != null) ||
                 (errors.getPassword() != null) ||
                 (errors.getPhoto() != null)) {
-            ProfileError response = new ProfileError();
+            Error response = new Error();
             response.setErrors(errors);
             return response;
         }

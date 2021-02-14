@@ -1,9 +1,9 @@
 package main.service;
 
-import main.request.others.PostRequest;
-import main.request.postids.PostIdRequest;
-import main.response.others.ThePosts;
-import main.response.results.ResultResponse;
+import main.model.request.others.PostRequest;
+import main.model.request.postids.PostIdRequest;
+import main.model.response.others.ThePosts;
+import main.model.response.results.ResultResponse;
 
 public interface PostService {
     ThePosts getListOfPostResponse(int offset, int limit, String mode);

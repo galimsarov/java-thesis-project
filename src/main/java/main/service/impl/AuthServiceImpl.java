@@ -6,22 +6,21 @@ import lombok.RequiredArgsConstructor;
 import main.config.AuthConfiguration;
 import main.model.CaptchaCode;
 import main.model.User;
+import main.model.response.results.Error;
 import main.repository.CaptchaCodeRepository;
 import main.repository.GlobalSettingsRepository;
 import main.repository.PostRepository;
 import main.repository.UserRepository;
-import main.request.others.EmailRequest;
-import main.request.passwords.ChangePasswordRequest;
-import main.request.passwords.LoginRequest;
-import main.request.passwords.RegisterRequest;
-import main.response.ids.AuthUserResp;
-import main.response.others.CaptchaResponse;
-import main.response.passwords.CodePasCapResp;
-import main.response.passwords.EmailNameCapResp;
-import main.response.results.PasswordError;
-import main.response.results.AuthResUserResp;
-import main.response.results.RegisterError;
-import main.response.results.ResultResponse;
+import main.model.request.others.EmailRequest;
+import main.model.request.passwords.ChangePasswordRequest;
+import main.model.request.passwords.LoginRequest;
+import main.model.request.passwords.RegisterRequest;
+import main.model.response.ids.AuthUserResp;
+import main.model.response.others.CaptchaResponse;
+import main.model.response.passwords.CodePasCapResp;
+import main.model.response.passwords.EmailNameCapResp;
+import main.model.response.results.AuthResUserResp;
+import main.model.response.results.ResultResponse;
 import main.service.AuthService;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -157,7 +156,7 @@ public class AuthServiceImpl implements AuthService {
         if ((errors.getCaptcha() != null) ||
                 (errors.getPassword() != null) ||
                 (errors.getCode() != null)) {
-            PasswordError response = new PasswordError();
+            Error response = new Error();
             response.setResult(false);
             response.setErrors(errors);
             return response;
@@ -196,7 +195,7 @@ public class AuthServiceImpl implements AuthService {
                     (errors.getName() != null) ||
                     (errors.getPassword() != null) ||
                     (errors.getCaptcha() != null)) {
-                RegisterError response = new RegisterError();;
+                Error response = new Error();;
                 response.setResult(false);
                 response.setErrors(errors);
                 return response;
