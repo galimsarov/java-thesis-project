@@ -64,6 +64,8 @@ public class GeneralServiceImpl implements GeneralService {
      * Метод imageUpload
      * Метод загружает на сервер изображение в папку upload
      */
+
+//    Вариант 1 - Объект
 //    @Override
 //    public Object imageUpload(MultipartFile file) throws IOException {
 //        String response = null;
@@ -80,9 +82,14 @@ public class GeneralServiceImpl implements GeneralService {
 //            return errorResponse;
 //        }
 //        if (!file.isEmpty()) {
-//            String uploadsDir = "/upload/";
-//            String realPathToUploads = request.getServletContext()
-//                    .getRealPath(uploadsDir);
+//            String realPathToUploads = request.getServletContext().getRealPath("")
+//                    + file.getOriginalFilename();
+//            File dest = new File(realPathToUploads);
+//            file.transferTo(dest);
+//
+//            String uploadsDir = "src/main/resources/static/img/upload/";
+//            if (!new File(uploadsDir).exists())
+//                new File(uploadsDir).mkdir();
 //            String workPiece = "abcdefghijklmnopqrstuvwxyz";
 //            String[] subDirs = new String[3];
 //            for (int i = 0; i < 3; i++) {
@@ -90,27 +97,25 @@ public class GeneralServiceImpl implements GeneralService {
 //                int range = random.nextInt(25);
 //                subDirs[i] = workPiece.substring(range, range + 2);
 //            }
-//            if (!new File(realPathToUploads).exists())
-//                new File(realPathToUploads).mkdir();
 //            for (String subDir : subDirs) {
-//                realPathToUploads += subDir + "/";
-//                if (!new File(realPathToUploads).exists())
-//                    new File(realPathToUploads).mkdir();
 //                uploadsDir += subDir + "/";
+//                if (!new File(uploadsDir).exists())
+//                    new File(uploadsDir).mkdir();
 //            }
-//            String orgName = file.getOriginalFilename();
-//            String filePath = realPathToUploads + orgName;
-//            File dest = new File(filePath);
-//            file.transferTo(dest);
-//            response = uploadsDir + file.getOriginalFilename();
+//            BufferedImage image = ImageIO.read(dest);
+//            File newFile = new File(uploadsDir + file.getOriginalFilename());
+//            ImageIO.write(image, "jpg", newFile);
+//
+//            response = uploadsDir.substring(25) + file.getOriginalFilename();
 //        }
 //        return response;
 //    }
+
+//    Вариант 2 - ResponseEntity
     @Override
-    public Object imageUpload(MultipartFile file) throws IOException {
+    public ResponseEntity imageUpload(MultipartFile file)
+            throws IOException {
         String response = null;
-        Error errorResponse = new Error();
-        errorResponse.setResult(false);
         ImageResponse errors = new ImageResponse();
         if (!file.getOriginalFilename().endsWith("jpg") &&
                 !file.getOriginalFilename().endsWith("png"))
@@ -118,8 +123,7 @@ public class GeneralServiceImpl implements GeneralService {
         if (file.getSize() > 1048576)
             errors.setImage("Размер файла превышает допустимый размер");
         if (errors.getImage() != null) {
-            errorResponse.setErrors(errors);
-            return errorResponse;
+            return new ResponseEntity(HttpStatus.BAD_REQUEST);
         }
         if (!file.isEmpty()) {
             String realPathToUploads = request.getServletContext().getRealPath("")
@@ -145,10 +149,9 @@ public class GeneralServiceImpl implements GeneralService {
             BufferedImage image = ImageIO.read(dest);
             File newFile = new File(uploadsDir + file.getOriginalFilename());
             ImageIO.write(image, "jpg", newFile);
-
             response = uploadsDir.substring(25) + file.getOriginalFilename();
         }
-        return response;
+        return ResponseEntity.ok(response);
     }
 
     /**

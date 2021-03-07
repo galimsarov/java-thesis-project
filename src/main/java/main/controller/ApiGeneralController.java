@@ -8,6 +8,7 @@ import main.model.response.others.*;
 import main.model.response.results.ResultResponse;
 import main.service.GeneralService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,8 +43,13 @@ public class ApiGeneralController {
      * Метод загружает на сервер изображение в папку upload
      * POST запрос /api/image
      */
+//    @PostMapping(value = "/image", consumes = "multipart/form-data")
+//    public Object imageUpload(@RequestPart(value = "image") MultipartFile file)
+//            throws IOException {
+//        return generalService.imageUpload(file);
+//    }
     @PostMapping(value = "/image", consumes = "multipart/form-data")
-    public Object imageUpload(@RequestPart(value = "image") MultipartFile file)
+    public ResponseEntity imageUpload(@RequestPart(value = "image") MultipartFile file)
             throws IOException {
         return generalService.imageUpload(file);
     }
