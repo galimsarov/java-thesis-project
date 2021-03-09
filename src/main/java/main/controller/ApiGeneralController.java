@@ -43,13 +43,8 @@ public class ApiGeneralController {
      * Метод загружает на сервер изображение в папку upload
      * POST запрос /api/image
      */
-//    @PostMapping(value = "/image", consumes = "multipart/form-data")
-//    public Object imageUpload(@RequestPart(value = "image") MultipartFile file)
-//            throws IOException {
-//        return generalService.imageUpload(file);
-//    }
     @PostMapping(value = "/image", consumes = "multipart/form-data")
-    public ResponseEntity imageUpload(@RequestPart(value = "image") MultipartFile file)
+    public Object imageUpload(@RequestPart(value = "image") MultipartFile file)
             throws IOException {
         return generalService.imageUpload(file);
     }
