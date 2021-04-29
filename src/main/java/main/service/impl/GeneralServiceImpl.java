@@ -64,54 +64,6 @@ public class GeneralServiceImpl implements GeneralService {
      * Метод imageUpload
      * Метод загружает на сервер изображение в папку upload
      */
-
-//    Вариант 1 - Объект
-//    @Override
-//    public Object imageUpload(MultipartFile file) throws IOException {
-//        String response = null;
-//        Error errorResponse = new Error();
-//        errorResponse.setResult(false);
-//        ImageResponse errors = new ImageResponse();
-//        if (!file.getOriginalFilename().endsWith("jpg") &&
-//                !file.getOriginalFilename().endsWith("png"))
-//            errors.setImage("Файл не является изображением");
-//        if (file.getSize() > 1048576)
-//            errors.setImage("Размер файла превышает допустимый размер");
-//        if (errors.getImage() != null) {
-//            errorResponse.setErrors(errors);
-//            return errorResponse;
-//        }
-//        if (!file.isEmpty()) {
-//            String realPathToUploads = request.getServletContext().getRealPath("")
-//                    + file.getOriginalFilename();
-//            File dest = new File(realPathToUploads);
-//            file.transferTo(dest);
-//
-//            String uploadsDir = "src/main/resources/static/img/upload/";
-//            if (!new File(uploadsDir).exists())
-//                new File(uploadsDir).mkdir();
-//            String workPiece = "abcdefghijklmnopqrstuvwxyz";
-//            String[] subDirs = new String[3];
-//            for (int i = 0; i < 3; i++) {
-//                Random random = new Random();
-//                int range = random.nextInt(25);
-//                subDirs[i] = workPiece.substring(range, range + 2);
-//            }
-//            for (String subDir : subDirs) {
-//                uploadsDir += subDir + "/";
-//                if (!new File(uploadsDir).exists())
-//                    new File(uploadsDir).mkdir();
-//            }
-//            BufferedImage image = ImageIO.read(dest);
-//            File newFile = new File(uploadsDir + file.getOriginalFilename());
-//            ImageIO.write(image, "jpg", newFile);
-//
-//            response = uploadsDir.substring(25) + file.getOriginalFilename();
-//        }
-//        return response;
-//    }
-
-//    Вариант 2 - ResponseEntity
     @Override
     public ResponseEntity imageUpload(MultipartFile file)
             throws IOException {
@@ -130,22 +82,7 @@ public class GeneralServiceImpl implements GeneralService {
                     + file.getOriginalFilename();
             File dest = new File(realPathToUploads);
             file.transferTo(dest);
-
-            String uploadsDir = "src/main/resources/static/img/upload/";
-            if (!new File(uploadsDir).exists())
-                new File(uploadsDir).mkdir();
-            String workPiece = "abcdefghijklmnopqrstuvwxyz";
-            String[] subDirs = new String[3];
-            for (int i = 0; i < 3; i++) {
-                Random random = new Random();
-                int range = random.nextInt(25);
-                subDirs[i] = workPiece.substring(range, range + 2);
-            }
-            for (String subDir : subDirs) {
-                uploadsDir += subDir + "/";
-                if (!new File(uploadsDir).exists())
-                    new File(uploadsDir).mkdir();
-            }
+            String uploadsDir = "src/main/resources/static/img/";
             BufferedImage image = ImageIO.read(dest);
             File newFile = new File(uploadsDir + file.getOriginalFilename());
             ImageIO.write(image, "jpg", newFile);
