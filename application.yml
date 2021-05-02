@@ -22,6 +22,10 @@ spring.mail.properties.mail.smtp.timeout: 5000
 spring.mail.properties.mail.smtp.writetimeout: 5000
 # TLS , port 587
 spring.mail.properties.mail.smtp.starttls.enable: true
+# cloudinary
+cloudName: dpzd8fsfk
+apiKey: 496256159153858
+apiSecret: CdeiLt96Davez9mWIhyhlrDkqMk
 
 title: DevPub
 subtitle: Рассказы разработчиков

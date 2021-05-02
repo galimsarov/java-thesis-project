@@ -1,5 +1,7 @@
 package main.service.impl;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import lombok.RequiredArgsConstructor;
 import main.config.AuthConfiguration;
 import main.model.*;
@@ -39,6 +41,7 @@ import java.util.*;
 @RequiredArgsConstructor
 public class GeneralServiceImpl implements GeneralService {
     private final Blog blog;
+    private final Cloudinary cloudinary;
     private final HttpServletRequest request;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
@@ -82,7 +85,8 @@ public class GeneralServiceImpl implements GeneralService {
                     + file.getOriginalFilename();
             File dest = new File(realPathToUploads);
             file.transferTo(dest);
-            response = "/" + file.getOriginalFilename();
+            Map uploadResult = cloudinary.uploader().upload(dest, ObjectUtils.emptyMap());
+            response = uploadResult.get("url").toString();
         }
         return ResponseEntity.ok(response);
     }
@@ -338,7 +342,8 @@ public class GeneralServiceImpl implements GeneralService {
                 }
             File newFile = new File(realPathToUploads + "user" + user.getId() + "Ava.jpg");
             ImageIO.write(newImage, "jpg", newFile);
-            user.setPhoto("/user" + user.getId() + "Ava.jpg");
+            Map uploadResult = cloudinary.uploader().upload(newFile, ObjectUtils.emptyMap());
+            user.setPhoto(uploadResult.get("url").toString());
             userRepository.saveAndFlush(user);
             ResultResponse response = new ResultResponse();
             response.setResult(true);
