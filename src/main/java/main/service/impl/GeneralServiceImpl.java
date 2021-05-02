@@ -82,11 +82,7 @@ public class GeneralServiceImpl implements GeneralService {
                     + file.getOriginalFilename();
             File dest = new File(realPathToUploads);
             file.transferTo(dest);
-            String uploadsDir = "src/main/resources/static/img/";
-            BufferedImage image = ImageIO.read(dest);
-            File newFile = new File(uploadsDir + file.getOriginalFilename());
-            ImageIO.write(image, "jpg", newFile);
-            response = uploadsDir.substring(25) + file.getOriginalFilename();
+            response = "/" + file.getOriginalFilename();
         }
         return ResponseEntity.ok(response);
     }
@@ -317,15 +313,11 @@ public class GeneralServiceImpl implements GeneralService {
             user.setEmail(requestWithPhoto.getEmail());
             if (requestWithPhoto.getPassword() != null)
                 user.setPassword(requestWithPhoto.getPassword());
-
-            String realPathToUploads = request.getServletContext()
-                    .getRealPath("");
+            String realPathToUploads = request.getServletContext().getRealPath("");
             String orgName = requestWithPhoto.getPhoto().getOriginalFilename();
             String filePath = realPathToUploads + orgName;
-
             File dest = new File(filePath);
             requestWithPhoto.getPhoto().transferTo(dest);
-
             BufferedImage image = ImageIO.read(dest);
             BufferedImage newImage = new BufferedImage(
                     36, 36, BufferedImage.TYPE_INT_RGB);
@@ -344,15 +336,10 @@ public class GeneralServiceImpl implements GeneralService {
                             x * step + startX, y * step + startY);
                     newImage.setRGB(x, y, rgb);
                 }
-            File newFile = new File(
-                    "src/main/resources/static/img/user" +
-                            user.getId() + "Ava.jpg");
+            File newFile = new File(realPathToUploads + "user" + user.getId() + "Ava.jpg");
             ImageIO.write(newImage, "jpg", newFile);
-
-            user.setPhoto("/img/user" + user.getId() + "Ava.jpg");
-
+            user.setPhoto("/user" + user.getId() + "Ava.jpg");
             userRepository.saveAndFlush(user);
-
             ResultResponse response = new ResultResponse();
             response.setResult(true);
             return response;
